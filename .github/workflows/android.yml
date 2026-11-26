@@ -102,8 +102,8 @@ jobs:
 
       - name: Optimize Sprites
         run: |
-          pip install --quiet --break-system-packages pillow numpy || pip install --quiet pillow numpy
-          python3 tools/optimize_sprites.py assets --trim --max-size 4096 --scale-manifest assets/preload/data/textureScale.json --no-cache --store ~/sprite-store --prune
+          pip install --quiet --break-system-packages pillow numpy pyoxipng || pip install --quiet pillow numpy pyoxipng
+          python3 tools/optimize_sprites.py assets --trim --repack --max-size 4096 --scale-manifest assets/preload/data/textureScale.json --no-cache --store ~/sprite-store --prune
 
       - name: Save Sprite Cache
         if: steps.cache-sprites.outputs.cache-hit != 'true'
