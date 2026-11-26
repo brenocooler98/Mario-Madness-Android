@@ -96,14 +96,15 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/sprite-store
-          key: sprites-${{ hashFiles('tools/optimize_sprites.py') }}-${{ hashFiles('assets/**/*.png', 'assets/**/*.xml') }}
+          key: sprites-${{ hashFiles('tools/optimize_sprites.py') }}-${{ hashFiles('assets/**/*.png', 'assets/**/*.xml', 'assets/**/*.ogg', 'assets/**/*.json') }}
           restore-keys: |
             sprites-${{ hashFiles('tools/optimize_sprites.py') }}-
 
       - name: Optimize Sprites
         run: |
           pip install --quiet --break-system-packages pillow numpy pyoxipng || pip install --quiet pillow numpy pyoxipng
-          python3 tools/optimize_sprites.py assets --trim --repack --max-size 4096 --scale-manifest assets/preload/data/textureScale.json --no-cache --store ~/sprite-store --prune
+          command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+          python3 tools/optimize_sprites.py assets --trim --repack --audio --json --max-size 4096 --scale-manifest assets/preload/data/textureScale.json --no-cache --store ~/sprite-store --prune
 
       - name: Save Sprite Cache
         if: steps.cache-sprites.outputs.cache-hit != 'true'

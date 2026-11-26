@@ -6,6 +6,8 @@ import json
 import os
 import re
 import shutil
+import subprocess
+import tempfile
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -21,12 +23,14 @@ try:
 except ImportError:
     oxipng = None
 
-VERSION = "3"
+VERSION = "4"
 CACHE_NAME = ".sprite_cache.json"
 SUBTEXTURE = re.compile(r"<SubTexture\b[^>]*>")
 NUMBER = r'(\b{}\s*=\s*")(-?\d+(?:\.\d+)?)(")'
 GRID_LOAD = re.compile(r"loadGraphic\(\s*Paths\.image\(\s*['\"]([^'\"]+)['\"][^)]*\)\s*,\s*true")
 PADDING = 2
+MAXRECTS_LIMIT = 160
+AUDIO_BITRATES = {3: 112, 4: 128, 5: 160, 6: 192, 7: 224, 8: 256}
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -169,20 +173,76 @@ class Skyline:
         return x, y
 
 
+def skyline_pack(sizes, order, width, limit):
+    skyline = Skyline(width)
+    spots = [None] * len(sizes)
+    for i in order:
+        spot = skyline.place(sizes[i][0] + PADDING, sizes[i][1] + PADDING)
+        if spot is None or skyline.height > limit:
+            return None
+        spots[i] = spot
+    return spots
+
+
+def maxrects_pack(sizes, order, width, limit):
+    free = [(0, 0, width, limit)]
+    spots = [None] * len(sizes)
+    for i in order:
+        w = sizes[i][0] + PADDING
+        h = sizes[i][1] + PADDING
+        best = None
+        for fx, fy, fw, fh in free:
+            if w <= fw and h <= fh:
+                score = (fy + h, min(fw - w, fh - h), fx)
+                if best is None or score < best[0]:
+                    best = (score, fx, fy)
+        if best is None:
+            return None
+        _, x, y = best
+        spots[i] = (x, y)
+        split = []
+        for rect in free:
+            fx, fy, fw, fh = rect
+            if x >= fx + fw or x + w <= fx or y >= fy + fh or y + h <= fy:
+                split.append(rect)
+                continue
+            if x > fx:
+                split.append((fx, fy, x - fx, fh))
+            if x + w < fx + fw:
+                split.append((x + w, fy, fx + fw - x - w, fh))
+            if y > fy:
+                split.append((fx, fy, fw, y - fy))
+            if y + h < fy + fh:
+                split.append((fx, y + h, fw, fy + fh - y - h))
+        split.sort(key=lambda r: -(r[2] * r[3]))
+        free = []
+        for rect in split:
+            contained = False
+            for other in free:
+                if rect[0] >= other[0] and rect[1] >= other[1] and rect[0] + rect[2] <= other[0] + other[2] and rect[1] + rect[3] <= other[1] + other[3]:
+                    contained = True
+                    break
+            if not contained:
+                free.append(rect)
+    return spots
+
+
 def pack(sizes, widths, limit, side_limit):
-    order = sorted(range(len(sizes)), key=lambda i: (-sizes[i][1], -sizes[i][0]))
-    best = None
+    orders = [
+        sorted(range(len(sizes)), key=lambda i: (-sizes[i][1], -sizes[i][0])),
+        sorted(range(len(sizes)), key=lambda i: (-(sizes[i][0] * sizes[i][1]), -sizes[i][1])),
+        sorted(range(len(sizes)), key=lambda i: (-max(sizes[i]), -min(sizes[i]))),
+    ]
+    attempts = []
     for width in widths:
-        skyline = Skyline(width)
-        spots = [None] * len(sizes)
-        ok = True
-        for i in order:
-            spot = skyline.place(sizes[i][0] + PADDING, sizes[i][1] + PADDING)
-            if spot is None or skyline.height > limit:
-                ok = False
-                break
-            spots[i] = spot
-        if not ok:
+        for order in orders:
+            attempts.append((skyline_pack, order, width))
+            if len(sizes) <= MAXRECTS_LIMIT:
+                attempts.append((maxrects_pack, order, width))
+    best = None
+    for packer, order, width in attempts:
+        spots = packer(sizes, order, width, limit)
+        if spots is None:
             continue
         used_width = max(spots[i][0] + sizes[i][0] for i in range(len(sizes)))
         used_height = max(spots[i][1] + sizes[i][1] for i in range(len(sizes)))
@@ -274,6 +334,10 @@ def repack_atlas(pixels, xml_text, frames, limit, target):
             return None
 
     return atlas, new_xml, scale
+
+
+def minify_xml(text):
+    return re.sub(r">\s+<", "><", text.strip())
 
 
 def clean_alpha(pixels):
@@ -405,9 +469,12 @@ def optimize_file(path, xml_path, options, grid):
     if pixels.shape[2] == 3 and os.path.exists(xml_path) and (options.trim or options.repack):
         pixels = np.dstack([pixels, np.full(pixels.shape[:2], 255, dtype=np.uint8)])
 
-    if os.path.exists(xml_path) and not grid and (options.trim or options.repack):
+    xml_text = None
+    if os.path.exists(xml_path):
         with open(xml_path, "r", encoding="utf-8-sig") as handle:
             xml_text = handle.read()
+
+    if xml_text is not None and not grid and (options.trim or options.repack):
         frames = read_frames(xml_text, pixels.shape[1], pixels.shape[0])
         if frames:
             result = repack_atlas(pixels, xml_text, frames, options.atlas_limit, options.max_size) if options.repack else None
@@ -445,7 +512,19 @@ def optimize_file(path, xml_path, options, grid):
     best = encode(pixels, options)
     changed_layout = new_xml is not None or original_size is not None
 
+    xml_output = None
+    if xml_text is not None and SUBTEXTURE.search(xml_text):
+        xml_output = minify_xml(new_xml if new_xml is not None else xml_text)
+        if new_xml is None and xml_output == xml_text:
+            xml_output = None
+    elif new_xml is not None:
+        xml_output = new_xml
+
     if not changed_layout and len(best) >= file_size:
+        if xml_output is not None and not options.dry_run:
+            with open(xml_path, "w", encoding="utf-8", newline="") as handle:
+                handle.write(xml_output)
+            return path, file_size, file_size, True, True, None, ""
         return path, file_size, file_size, False, False, None, ""
 
     if options.dry_run:
@@ -456,11 +535,174 @@ def optimize_file(path, xml_path, options, grid):
         handle.write(best)
     os.replace(temp_path, path)
 
-    if new_xml is not None:
+    if xml_output is not None:
         with open(xml_path, "w", encoding="utf-8", newline="") as handle:
-            handle.write(new_xml)
+            handle.write(xml_output)
 
-    return path, file_size, len(best), True, new_xml is not None, original_size, ", ".join(notes)
+    return path, file_size, len(best), True, xml_output is not None, original_size, ", ".join(notes)
+
+
+def single_store_key(path, kind, settings):
+    digest = hashlib.sha1(f"{kind}:{settings}".encode())
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def run_single(kind, path, options, worker):
+    before = os.path.getsize(path)
+    settings = kind_settings(kind, options)
+    if options.store and not options.dry_run:
+        key = single_store_key(path, kind, settings)
+        folder = os.path.join(options.store, key[:2], key)
+        stored = os.path.join(folder, "output")
+        if os.path.exists(stored):
+            if os.path.getsize(stored) != before or file_hash(stored) != file_hash(path):
+                shutil.copyfile(stored, path)
+            return path, before, os.path.getsize(path), True, key, True, None, ""
+        result = worker(path, options)
+        os.makedirs(folder, exist_ok=True)
+        shutil.copyfile(path, os.path.join(folder, "output.tmp"))
+        os.replace(os.path.join(folder, "output.tmp"), stored)
+        return path, before, result[0], result[1], key, False, None, result[2]
+    result = worker(path, options)
+    return path, before, result[0], result[1], None, False, None, result[2]
+
+
+def optimize_json(path, options):
+    before = os.path.getsize(path)
+    with open(path, "rb") as handle:
+        raw = handle.read()
+    try:
+        text = raw.decode("utf-8-sig")
+        end = text.rstrip().rfind("}")
+        if end < 0:
+            return before, False, ""
+        body = text[: end + 1]
+
+        def reject(value):
+            raise ValueError(value)
+
+        data = json.loads(body, parse_constant=reject)
+    except (UnicodeDecodeError, ValueError):
+        return before, False, ""
+    output = json.dumps(data, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if json.loads(output.decode("utf-8")) != data or len(output) >= before:
+        return before, False, ""
+    if not options.dry_run:
+        with open(path + ".tmp", "wb") as handle:
+            handle.write(output)
+        os.replace(path + ".tmp", path)
+    return len(output), True, ""
+
+
+def probe_audio(path):
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries", "stream=codec_name,channels,sample_rate,bit_rate:format=bit_rate,duration", "-of", "json", path],
+        capture_output=True, text=True, check=True,
+    )
+    data = json.loads(result.stdout)
+    stream = (data.get("streams") or [{}])[0]
+    fmt = data.get("format") or {}
+    bitrate = stream.get("bit_rate") or fmt.get("bit_rate") or "0"
+    return {
+        "codec": stream.get("codec_name"),
+        "channels": int(stream.get("channels") or 0),
+        "rate": int(stream.get("sample_rate") or 0),
+        "bitrate": int(float(bitrate)) // 1000,
+    }
+
+
+def is_fake_stereo(path):
+    process = subprocess.Popen(["ffmpeg", "-v", "quiet", "-i", path, "-map", "0:a:0", "-f", "s16le", "-acodec", "pcm_s16le", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    fake = True
+    leftover = b""
+    try:
+        while True:
+            chunk = process.stdout.read(1 << 20)
+            if not chunk:
+                break
+            chunk = leftover + chunk
+            usable = len(chunk) - len(chunk) % 4
+            leftover = chunk[usable:]
+            samples = np.frombuffer(chunk[:usable], dtype=np.int16).reshape(-1, 2).astype(np.int32)
+            if samples.size and np.abs(samples[:, 0] - samples[:, 1]).max() > 2:
+                fake = False
+                break
+    finally:
+        process.stdout.close()
+        process.kill()
+        process.wait()
+    return fake
+
+
+def optimize_audio(path, options):
+    before = os.path.getsize(path)
+    info = probe_audio(path)
+    if info["codec"] != "vorbis" or info["channels"] == 0:
+        return before, False, ""
+
+    mono = options.audio_mono and info["channels"] == 2 and is_fake_stereo(path)
+    channels = 1 if mono else info["channels"]
+    target = AUDIO_BITRATES.get(options.audio_quality, 192)
+    if channels == 1:
+        target = int(target * 0.6)
+    if not mono and info["bitrate"] and info["bitrate"] <= target * 1.15:
+        return before, False, ""
+
+    handle, temp_path = tempfile.mkstemp(suffix=".ogg", dir=os.path.dirname(path))
+    os.close(handle)
+    try:
+        command = ["ffmpeg", "-v", "error", "-y", "-i", path, "-map", "0:a:0", "-map_metadata", "-1", "-c:a", "libvorbis", "-q:a", str(options.audio_quality)]
+        if mono:
+            command += ["-ac", "1"]
+        subprocess.run(command + [temp_path], check=True)
+        after = os.path.getsize(temp_path)
+        if after >= before * 0.9:
+            return before, False, ""
+        if options.dry_run:
+            return after, True, "mono" if mono else ""
+        os.replace(temp_path, path)
+        return after, True, "mono" if mono else ""
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+def kind_settings(kind, options):
+    if kind == "audio":
+        return f"audio:{VERSION}:{options.audio_quality}:{options.audio_mono}"
+    if kind == "json":
+        return f"json:{VERSION}"
+    return settings_of(options)
+
+
+def optimize_job(kind, path, options, grid):
+    if kind == "audio":
+        return run_single(kind, path, options, optimize_audio)
+    if kind == "json":
+        return run_single(kind, path, options, optimize_json)
+    return optimize(path, options, grid)
+
+
+def collect_extension(roots, excludes, extension):
+    files = []
+    for root in roots:
+        if os.path.isfile(root):
+            if root.lower().endswith(extension):
+                files.append(root)
+            continue
+        for folder, _, names in os.walk(root):
+            for name in names:
+                if not name.lower().endswith(extension):
+                    continue
+                path = os.path.join(folder, name)
+                relative = path.replace("\\", "/")
+                if any(fnmatch.fnmatch(relative, pattern) for pattern in excludes):
+                    continue
+                files.append(path)
+    return sorted(files)
 
 
 def collect(roots, excludes):
@@ -569,6 +811,10 @@ def main():
     parser.add_argument("--prune", action="store_true", help="Remove results from --store that were not used in this run")
     parser.add_argument("--max-size", type=int, default=0, help="Downscale textures bigger than this, the game keeps them at their original size on screen")
     parser.add_argument("--scale-manifest", help="JSON file that receives the original size of every downscaled texture")
+    parser.add_argument("--audio", action="store_true", help="Re-encode Vorbis audio with a high bitrate to a smaller size")
+    parser.add_argument("--audio-quality", type=int, default=6, help="Vorbis quality used by --audio, from 3 to 8")
+    parser.add_argument("--no-audio-mono", dest="audio_mono", action="store_false", help="Keep stereo files whose channels are identical")
+    parser.add_argument("--json", action="store_true", help="Minify JSON data files")
     parser.add_argument("--verbose", action="store_true", help="Print every optimized file")
     options = parser.parse_args()
 
@@ -581,20 +827,32 @@ def main():
         print("pyoxipng was not found, using Pillow, run: pip install pyoxipng")
 
     started = time.time()
-    files = collect(options.paths, options.exclude)
     grid = grid_images(options.source)
     cache = {} if options.no_cache else load_cache(options.cache)
-    settings = settings_of(options)
+
+    work = [("sprite", path) for path in collect(options.paths, options.exclude)]
+    if options.audio:
+        if shutil.which("ffmpeg") and shutil.which("ffprobe"):
+            work += [("audio", path) for path in collect_extension(options.paths, options.exclude, ".ogg")]
+        else:
+            print("ffmpeg was not found, skipping audio")
+    if options.json:
+        manifest = os.path.abspath(options.scale_manifest) if options.scale_manifest else None
+        work += [("json", path) for path in collect_extension(options.paths, options.exclude, ".json") if os.path.abspath(path) != manifest]
 
     pending = []
-    for path in files:
+    for kind, path in work:
         entry = cache.get(path.replace("\\", "/"))
-        if entry and entry.get("settings") == settings and entry.get("hash") == file_hash(path):
+        if entry and entry.get("settings") == kind_settings(kind, options) and entry.get("hash") == file_hash(path):
             continue
-        pending.append(path)
-    pending.sort(key=lambda p: os.path.getsize(p), reverse=True)
+        pending.append((kind, path))
+    pending.sort(key=lambda item: os.path.getsize(item[1]), reverse=True)
 
-    print(f"{len(files)} sprites found, {len(pending)} to process, {len(grid)} grid sheets kept as they are")
+    counts = {}
+    for kind, _ in work:
+        counts[kind] = counts.get(kind, 0) + 1
+    summary = ", ".join(f"{count} {kind}" for kind, count in sorted(counts.items()))
+    print(f"{summary} found, {len(pending)} to process, {len(grid)} grid sheets kept as they are")
 
     total_before = 0
     total_after = 0
@@ -612,9 +870,9 @@ def main():
             scaled = {}
 
     with ProcessPoolExecutor(max_workers=max(1, options.jobs)) as pool:
-        jobs = {pool.submit(optimize, path, options, is_grid(path, grid)): path for path in pending}
+        jobs = {pool.submit(optimize_job, kind, path, options, kind == "sprite" and is_grid(path, grid)): (kind, path) for kind, path in pending}
         for index, job in enumerate(as_completed(jobs), 1):
-            path = jobs[job]
+            kind, path = jobs[job]
             try:
                 _, before, after, modified, key, from_store, texture_size, notes = job.result()
             except Exception as error:
@@ -626,11 +884,12 @@ def main():
             total_after += after
             if key is not None:
                 used_keys.add(key)
-            runtime_id = runtime_path(path)
-            if texture_size:
-                scaled[runtime_id] = [int(texture_size[0]), int(texture_size[1])]
-            else:
-                scaled.pop(runtime_id, None)
+            if kind == "sprite":
+                runtime_id = runtime_path(path)
+                if texture_size:
+                    scaled[runtime_id] = [int(texture_size[0]), int(texture_size[1])]
+                else:
+                    scaled.pop(runtime_id, None)
             if "repacked" in notes:
                 repacked += 1
             if from_store:
@@ -642,7 +901,7 @@ def main():
                     print(f"[{index}/{len(pending)}] {path} {human(before)} -> {human(after)}{extra}")
 
             if not options.dry_run and not options.no_cache:
-                cache[path.replace("\\", "/")] = {"hash": file_hash(path), "settings": settings}
+                cache[path.replace("\\", "/")] = {"hash": file_hash(path), "settings": kind_settings(kind, options)}
 
     if not options.dry_run and not options.no_cache:
         save_cache(options.cache, cache)
