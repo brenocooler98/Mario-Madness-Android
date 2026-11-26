@@ -1123,7 +1123,7 @@ class PlayState extends MusicBeatState
 					fogblack.screenCenter();
 					add(fogblack);
 					
-					blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+					blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 					blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 					blackBarThingie.scrollFactor.set(0, 0);
 					blackBarThingie.alpha = 0;
@@ -1244,7 +1244,7 @@ class PlayState extends MusicBeatState
 				iconGF.cameras = [camHUD];
 				iconGF.antialiasing = ClientPrefs.globalAntialiasing;
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.scrollFactor.set(0, 0);
 				blackBarThingie.visible = false;
@@ -1388,7 +1388,7 @@ class PlayState extends MusicBeatState
 					defaultCamZoom = 0.8;
 				}
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.alpha = 0;
 				add(blackBarThingie);
@@ -1724,7 +1724,7 @@ class PlayState extends MusicBeatState
 					add(blueMario2);
 				}
 
-				blackOGNThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackOGNThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackOGNThingie.setGraphicSize(Std.int(blackOGNThingie.width * 10));
 				blackOGNThingie.alpha = 0;
 				add(blackOGNThingie);
@@ -1818,7 +1818,7 @@ class PlayState extends MusicBeatState
 				bftors.animation.play('idle');
 				bfext.animation.play('idle');
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.alpha = 0;
 				blackBarThingie.cameras = [camOther];
@@ -1874,7 +1874,7 @@ class PlayState extends MusicBeatState
 				stanlines.animation.addByIndices('line8', 'lines', [7], "", 24, true);
 				stanlines.antialiasing = ClientPrefs.globalAntialiasing;
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.alpha = 0;
 				blackBarThingie.cameras = [camEst];
@@ -1980,7 +1980,7 @@ class PlayState extends MusicBeatState
 					iconGF.alpha = 0;
 					iconGF.antialiasing = ClientPrefs.globalAntialiasing;
 
-					blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+					blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 					blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 					blackBarThingie.cameras = [camEst];
 					blackBarThingie.scrollFactor.set(0, 0);
@@ -2061,7 +2061,7 @@ class PlayState extends MusicBeatState
 				badHUDMario.scale.set(5, 5);
 				badHUDMario.cameras = [camHUD];
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 
 				// im sorry little one...
@@ -2227,7 +2227,7 @@ class PlayState extends MusicBeatState
 				bordervid.antialiasing = ClientPrefs.globalAntialiasing;
 				bordervid.flipY = !hasDownScroll;
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.cameras = [camEst];
 				blackBarThingie.scrollFactor.set(0, 0);
@@ -2253,7 +2253,7 @@ class PlayState extends MusicBeatState
 
 				addCharacterToList('bfGDDIES', 0);
 
-				var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF155FD9);
+				var bg:FlxSprite = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF155FD9));
 				bg.setGraphicSize(Std.int(bg.width * 10));
 				bg.scrollFactor.set(0, 0);
 				add(bg);
@@ -2411,7 +2411,7 @@ class PlayState extends MusicBeatState
 				camHUD.filters = [new ShaderFilter(angel)];
 				// trace(winx + ' and ' + winy);
 
-				var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				var bg:FlxSprite = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				bg.setGraphicSize(Std.int(bg.width * 10));
 				bg.scrollFactor.set(0, 0);
 				add(bg);
@@ -2424,13 +2424,13 @@ class PlayState extends MusicBeatState
 				yourhead.scrollFactor.set();
 				add(yourhead);
 
-				virtuabg = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF571900);
+				virtuabg = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF571900));
 				virtuabg.setGraphicSize(Std.int(virtuabg.width * 10));
 				virtuabg.scrollFactor.set(0, 0);
 				virtuabg.alpha = 0;
 				add(virtuabg);
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				//blackBarThingie.alpha = 0;
 				blackBarThingie.scrollFactor.set(0, 0);
@@ -2514,7 +2514,7 @@ class PlayState extends MusicBeatState
 				bg.scrollFactor.set(0, 0);
 				add(bg);
 
-				duckbg = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE);
+				duckbg = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE));
 				duckbg.setGraphicSize(Std.int(duckbg.width * 10));
 				duckbg.alpha = 0;
 				duckbg.color = 0xFF5595DA;
@@ -2572,7 +2572,7 @@ class PlayState extends MusicBeatState
 				bowlava.antialiasing = false;
 				add(bowlava);
 
-				blackinfrontobowser = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackinfrontobowser = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackinfrontobowser.setGraphicSize(Std.int(blackinfrontobowser.width * 10));
 				blackinfrontobowser.alpha = 1;
 				add(blackinfrontobowser);
@@ -2605,13 +2605,13 @@ class PlayState extends MusicBeatState
 				cutstatic.antialiasing = ClientPrefs.globalAntialiasing;
 				add(cutstatic);
 
-				screencolor = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.RED);
+				screencolor = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.RED));
 				screencolor.setGraphicSize(Std.int(screencolor.width * 10));
 				screencolor.alpha = 0;
 				screencolor.scrollFactor.set(0, 0);
 				add(screencolor);
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.alpha = 0;
 				blackBarThingie.scrollFactor.set(0, 0);
@@ -2705,7 +2705,7 @@ class PlayState extends MusicBeatState
 				estatica.screenCenter();
 				add(estatica);
 
-				ycbuWhite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE);
+				ycbuWhite = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE));
 				ycbuWhite.setGraphicSize(Std.int(ycbuWhite.width * 10));
 				ycbuWhite.alpha = 0;
 
@@ -2808,7 +2808,7 @@ class PlayState extends MusicBeatState
 				faropapu.updateHitbox();
 				add(faropapu);
 
-				whiteThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				whiteThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				whiteThingie.setGraphicSize(Std.int(whiteThingie.width * 10));
 				whiteThingie.alpha = 0;
 				add(whiteThingie);
@@ -3065,7 +3065,7 @@ class PlayState extends MusicBeatState
 				addCharacterToList('bf_demiseUG', 0);
 				addCharacterToList('bf_demisedeath', 0);
 
-				demColor = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE);
+				demColor = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE));
 				demColor.setGraphicSize(Std.int(demColor.width * 10));
 				demColor.scrollFactor.set(0, 0);
 				demColor.color = FlxColor.BLACK;
@@ -3138,7 +3138,7 @@ class PlayState extends MusicBeatState
 				underroofdemise.animation.play('idle');
 				add(underroofdemise);
  
-				whenyourered = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFFD10000);
+				whenyourered = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFFD10000));
 				whenyourered.setGraphicSize(Std.int(whenyourered.width * 10));
 				whenyourered.alpha = 0;
 				add(whenyourered);
@@ -3402,7 +3402,7 @@ class PlayState extends MusicBeatState
 				marioattack.animation.addByPrefix('Attack', 'AttackFinal', 24, false);
 				add(marioattack);
 
-				var blackthing = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				var blackthing = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackthing.setGraphicSize(Std.int(blackthing.width * 10));
 				blackthing.cameras = [camEst];
 				add(blackthing);
@@ -3609,7 +3609,7 @@ class PlayState extends MusicBeatState
 
 				fgTLL.alpha = 0.000001;
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.scrollFactor.set(0, 0);
 				blackBarThingie.cameras = [camEst];
@@ -3672,7 +3672,7 @@ class PlayState extends MusicBeatState
 				//funnylayer0 the end
 				funnylayer0 = new BGSprite('mario/costume/Lamp', -1200, -770, 1, 1);
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.alpha = 1;
 
@@ -3755,7 +3755,7 @@ class PlayState extends MusicBeatState
 				act2Stat.scale.set(1.75, 1.75);
 				add(act2Stat);
 
-				act2WhiteFlash = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE);
+				act2WhiteFlash = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE));
 				act2WhiteFlash.setGraphicSize(Std.int(act2Stat.width * 10));
 				act2WhiteFlash.alpha = 0;
 				add(act2WhiteFlash);
@@ -4013,7 +4013,7 @@ class PlayState extends MusicBeatState
 				iconA42.cameras = [camHUD];
 				iconA42.antialiasing = ClientPrefs.globalAntialiasing;
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.alpha = 1;
 				blackBarThingie.cameras = [camEst];
@@ -4104,7 +4104,7 @@ class PlayState extends MusicBeatState
 				flood.alpha = 0.7;
 				add(flood);
 
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.alpha = 1;
 				blackBarThingie.cameras = [camEst];
@@ -4405,7 +4405,7 @@ class PlayState extends MusicBeatState
 
 			case 'piracy':
 				add(bfspot);
-				blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 				blackBarThingie.scrollFactor.set(0, 0);
 				blackBarThingie.alpha = 0;
@@ -4672,7 +4672,7 @@ class PlayState extends MusicBeatState
 
 		if (curStage == 'luigiout' || curStage == 'realbg' || curStage == 'turmoilsweep' || curStage == 'secretbg')
 		{
-			blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 			blackBarThingie.alpha = 1;
 			blackBarThingie.cameras = [camEst];
@@ -4683,13 +4683,13 @@ class PlayState extends MusicBeatState
 
 		if (curStage == 'exeport')
 		{
-			blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 			blackBarThingie.alpha = 0;
 			blackBarThingie.cameras = [camEst];
 			add(blackBarThingie);
 
-			screencolor = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.RED);
+			screencolor = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.RED));
 			screencolor.setGraphicSize(Std.int(screencolor.width * 10));
 			screencolor.alpha = 0;
 			screencolor.cameras = [camEst];
@@ -5017,7 +5017,7 @@ class PlayState extends MusicBeatState
 			enemyY = dad.y;
 			enemyX = dad.x;
 
-			blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 			blackBarThingie.alpha = 1;
 			blackBarThingie.cameras = [camEst];
@@ -5035,7 +5035,7 @@ class PlayState extends MusicBeatState
 
 		if (curStage == 'hatebg')
 		{
-			blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 			blackBarThingie.alpha = 1;
 			blackBarThingie.cameras = [camEst];
@@ -5153,12 +5153,12 @@ class PlayState extends MusicBeatState
 				introLText.visible = false;
 				add(introLText);
 
-				bbar1 = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				bbar1 = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				bbar1.cameras = [camEst];
 				bbar1.x = 1152;
 				add(bbar1);
 
-				bbar2 = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				bbar2 = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				bbar2.cameras = [camEst];
 				bbar2.x = -1152;
 				add(bbar2);
@@ -6150,7 +6150,7 @@ class PlayState extends MusicBeatState
 
 	public function startVideo(name:String):Void
 	{
-			var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			var bg:FlxSprite = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			bg.cameras = [camOther];
 			bg.scrollFactor.set(0, 0);
 			add(bg);
@@ -6280,7 +6280,7 @@ class PlayState extends MusicBeatState
 			}
 			else if (curStage == 'bootleg')
 			{
-				var blackthing = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				var blackthing = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackthing.setGraphicSize(Std.int(blackthing.width * 10));
 				blackthing.alpha = 1;
 				blackthing.cameras = [camOther];
@@ -6340,7 +6340,7 @@ class PlayState extends MusicBeatState
 			else if (curStage == 'landstage')
 			{
 				startedCountdown = true;
-				var blackthing = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				var blackthing = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackthing.setGraphicSize(Std.int(blackthing.width * 10));
 				blackthing.alpha = 1;
 				blackthing.cameras = [camOther];
@@ -6404,7 +6404,7 @@ class PlayState extends MusicBeatState
 			else if (curStage == 'execlassic')
 			{
 				startedCountdown = true;
-				var blackthing = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				var blackthing = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackthing.setGraphicSize(Std.int(blackthing.width * 10));
 				blackthing.alpha = 1;
 				blackthing.cameras = [camHUD];
@@ -11654,7 +11654,7 @@ class PlayState extends MusicBeatState
 						eventTweens.push(FlxTween.tween(xboxigualGOD, {x: 460}, 0.5, {ease: FlxEase.quadIn}));
 
 					case 10:
-						blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+						blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 						blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 						blackBarThingie.cameras = [camEst];
 						blackBarThingie.scrollFactor.set(0, 0);
@@ -14454,7 +14454,7 @@ class PlayState extends MusicBeatState
 				{
 					// FlxG.sound.playMusic(Paths.music('freakyMenu'));
 					if(SONG.song.toLowerCase() == 'starman-slaughter' || SONG.song.toLowerCase() == 'starman slaughter'){
-						var blackthing = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+						var blackthing = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 						blackthing.setGraphicSize(Std.int(blackthing.width * 10));
 						blackthing.alpha = 0;
 						blackthing.cameras = [camHUD];
@@ -14500,7 +14500,7 @@ class PlayState extends MusicBeatState
 
 					if (curStage == 'execlassic')
 					{
-						var blackthing = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+						var blackthing = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 						blackthing.setGraphicSize(Std.int(blackthing.width * 10));
 						blackthing.alpha = 0;
 						blackthing.cameras = [camHUD];
@@ -14538,7 +14538,7 @@ class PlayState extends MusicBeatState
 			}
 			else if (isWarp)
 			{
-				var blackthing = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+				var blackthing = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 				blackthing.setGraphicSize(Std.int(blackthing.width * 10));
 				blackthing.alpha = 0;
 				blackthing.cameras = [camHUD];

@@ -120,7 +120,7 @@ class WarpState extends MusicBeatState
 			#end
 		}
 
-		var backbg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		var backbg:FlxSprite = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		add(blackScreen);
 
 		bg = new FlxSprite(0, 0);
@@ -265,7 +265,7 @@ class WarpState extends MusicBeatState
 		introButton.visible = false;
 		add(introButton);
 
-		blackScreen = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		blackScreen = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		blackScreen.alpha = 1;
 		add(blackScreen);
 
@@ -1021,7 +1021,7 @@ class WorldState extends MusicBeatSubstate
 		screenText.scrollFactor.set(0, 0);
 		add(screenText);
 
-		blackScreen = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		blackScreen = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		blackScreen.alpha = 1;
 		blackScreen.scrollFactor.set(0, 0);
 		add(blackScreen);
@@ -1833,7 +1833,7 @@ class UltraState extends MusicBeatSubstate
 		enableTouchMenu();
 		addBackButton();
 
-		bg0 = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		bg0 = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		bg0.setGraphicSize(Std.int(bg0.width * 5));
 		bg0.scrollFactor.set(0, 0);
 		bg0.alpha = 1;
@@ -1942,7 +1942,7 @@ class UltraState extends MusicBeatSubstate
 		screenText.scrollFactor.set(0, 0);
 		add(screenText);
 
-		blackScreen = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		blackScreen = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		blackScreen.alpha = 1;
 		blackScreen.scrollFactor.set(0, 0);
 		add(blackScreen);
@@ -2312,7 +2312,7 @@ class PipeState extends MusicBeatSubstate
 		FlxG.sound.music.stop();
 		WarpState.pipeCut = false;
 		WarpState.worldSelected = 0;
-		var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		var bg:FlxSprite = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		add(bg);
 
 		pipe = new FlxSprite();
@@ -2370,7 +2370,7 @@ class VirtualState extends MusicBeatSubstate
 		FlxG.camera.scroll.y = 0;
 		FlxG.camera.scroll.x = 0;
 
-		var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		var bg:FlxSprite = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		add(bg);
 
 		warning = new FlxSprite();

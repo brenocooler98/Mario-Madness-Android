@@ -19,6 +19,25 @@ import openfl.utils.Assets;
 #end
 
 class CoolUtil {
+	public static var screenOverscan(get, never):Float;
+
+	static function get_screenOverscan():Float
+	{
+		#if mobile
+		return mobile.MobileWindow.overscan;
+		#else
+		return 0;
+		#end
+	}
+
+	public static function coverScreen<T:flixel.FlxSprite>(sprite:T):T
+	{
+		var extra:Float = screenOverscan;
+		if (sprite != null && extra > 0 && sprite.frameWidth > 0)
+			sprite.scale.x *= (sprite.frameWidth + extra * 2) / sprite.frameWidth;
+		return sprite;
+	}
+
 	public static function getTopCamera():flixel.FlxCamera
 	{
 		var index:Int = FlxG.cameras.list.length - 1;

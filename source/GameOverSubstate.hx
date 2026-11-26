@@ -191,7 +191,7 @@ class GameOverSubstate extends MusicBeatSubstate
 			soCoolButton.alpha = 0;
 			add(soCoolButton);
 
-			blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 			add(blackBarThingie);
 
@@ -293,7 +293,7 @@ class GameOverSubstate extends MusicBeatSubstate
 			cdGrad.screenCenter();
 			add(cdGrad);
 
-			blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 			add(blackBarThingie);
 
@@ -355,7 +355,7 @@ class GameOverSubstate extends MusicBeatSubstate
 			else
 				pibehallytwo.y += 384;
 
-			blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 			add(blackBarThingie);
 
@@ -435,7 +435,7 @@ class GameOverSubstate extends MusicBeatSubstate
 			pibeYCB2.y += 330;
 			add(pibeYCB2);
 			
-			blackBarThingie = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			blackBarThingie = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			blackBarThingie.setGraphicSize(Std.int(blackBarThingie.width * 10));
 			blackBarThingie.visible = false;
 			add(blackBarThingie);

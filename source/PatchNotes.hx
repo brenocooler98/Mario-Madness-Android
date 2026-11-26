@@ -116,7 +116,7 @@ class PatchNotes extends MusicBeatState
 		descText = new FlxText(0, 0, 0, "Example Text", 16);
 		//add(descText);
 
-		var bgB = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		var bgB = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		bgB.alpha = 1;
 		bgB.scrollFactor.set();
 		add(bgB);

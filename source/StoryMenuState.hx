@@ -187,7 +187,7 @@ class StoryMenuState extends MusicBeatSubstate
 
 		dumbTween2 = FlxTween.num(0, 0.5, 4, {ease: FlxEase.expoOut}, (v:Float) -> {staticShader.strengthMulti.value = [v];});
 		
-		flicker = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF000000);
+		flicker = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF000000));
 		flicker.scrollFactor.set(0, 0);
 		flicker.updateHitbox();
 		flicker.alpha = 0.1;

@@ -41,7 +41,7 @@ class LoadingState extends MusicBeatState
 
 	override function create()
 	{
-		var bg:FlxSprite = new FlxSprite(0, 0).makeGraphic(FlxG.width, FlxG.height, 0xff000000);
+		var bg:FlxSprite = CoolUtil.coverScreen(new FlxSprite(0, 0).makeGraphic(FlxG.width, FlxG.height, 0xff000000));
 		add(bg);
 		funkay = new FlxSprite(0, 0).loadGraphic(Paths.getPath('images/funkay.png', IMAGE));
 		funkay.setGraphicSize(0, FlxG.height);

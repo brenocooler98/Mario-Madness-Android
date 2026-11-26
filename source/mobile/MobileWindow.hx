@@ -18,11 +18,7 @@ class MobileWindow
 	static var initialized:Bool = false;
 	static var maskKey:String = '';
 	public static var fullscreen(default, null):Bool = false;
-
-	static var wideCamera:FlxCamera;
-	static var wideBaseX:Float = 0;
-	static var wideBaseWidth:Int = 0;
-	static var wideExtra:Int = 0;
+	public static var overscan(default, null):Float = 0;
 
 	static var viewX:Float = 0;
 	static var viewY:Float = 0;
@@ -96,14 +92,14 @@ class MobileWindow
 		target.x = ((zoom - 1) * root.x + cornerX) / rootScale;
 		target.y = ((zoom - 1) * root.y + cornerY) / rootScaleY;
 
-		var wide:Bool = fullscreen && width == 1280 && height == 720 && cornerX > 0 && Std.isOfType(FlxG.state, PlayState);
-		var extra:Int = 0;
+		var wide:Bool = fullscreen && width == 1280 && height == 720 && cornerX > 0;
+		var extra:Float = 0;
 		if (wide)
 		{
 			var edge:Point = FlxG.game.globalToLocal(new Point(0, cornerY));
-			extra = Std.int(Math.max(0, Math.ceil(-edge.x)));
+			extra = Math.max(0, Math.ceil(-edge.x));
 		}
-		updateWideCamera(wide ? extra : 0);
+		updateOverscan(wide ? extra : 0);
 
 		if (wide && extra > 0)
 		{
@@ -123,37 +119,19 @@ class MobileWindow
 		}
 	}
 
-	static function updateWideCamera(extra:Int):Void
+	static function updateOverscan(extra:Float):Void
 	{
-		var camera:FlxCamera = extra > 0 && FlxG.cameras.list.length > 0 ? FlxG.cameras.list[0] : null;
-
-		if (wideCamera != null)
+		overscan = extra;
+		for (camera in FlxG.cameras.list)
 		{
-			var valid:Bool = FlxG.cameras.list.contains(wideCamera) && wideCamera.width == wideBaseWidth + wideExtra * 2;
-			if (!valid)
-			{
-				wideCamera = null;
-			}
-			else if (wideCamera != camera || wideExtra != extra)
-			{
-				wideCamera.x = wideBaseX;
-				wideCamera.width = wideBaseWidth;
-				wideCamera = null;
-			}
+			if (camera == null || MobileControls.isMobileCamera(camera))
+				continue;
+
+			var fits:Bool = camera.x == 0 && camera.width == FlxG.width;
+			var value:Float = fits ? extra : 0;
+			if (camera.overscan != value)
+				camera.overscan = value;
 		}
-
-		if (camera == null || wideCamera != null)
-			return;
-
-		if (camera.x != 0 || camera.width != FlxG.width)
-			return;
-
-		wideCamera = camera;
-		wideBaseX = camera.x;
-		wideBaseWidth = camera.width;
-		wideExtra = extra;
-		camera.x = wideBaseX - extra;
-		camera.width = wideBaseWidth + extra * 2;
 	}
 
 	public static function getVisibleRect():FlxRect

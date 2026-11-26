@@ -115,7 +115,7 @@ class PauseSubState extends MusicBeatSubstate
 
 		FlxG.sound.list.add(pauseMusic);
 
-		bg = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		bg = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 		bg.alpha = 0;
 		bg.scrollFactor.set();
 		add(bg);

@@ -1691,7 +1691,7 @@ class DeleteSubstate extends MusicBeatSubstate
 		{
 			super();
 
-			darkbg = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+			darkbg = CoolUtil.coverScreen(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK));
 			darkbg.scrollFactor.set(0, 0);
 			darkbg.setGraphicSize(Std.int(darkbg.width * 3));
 			darkbg.alpha = 0.2;
@@ -2015,7 +2015,7 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 			case 'Hitbox Opacity': "How visible the touch lanes are when pressed.";
 			case 'Invisible Pause Button': "If checked, the pause button is hidden\nbut it still works when tapped.";
 			case 'Dodge Button': "Where the yellow dodge bar shows up\non songs with the dodge mechanic.";
-			case 'Screen Style': "Original keeps the 16:9 screen with black borders.\nFullscreen fills the whole screen during songs without stretching.";
+			case 'Screen Style': "Original keeps the 16:9 screen with black borders.\nFullscreen fills the whole screen without stretching.";
 			case 'Unlock All': "Unlocks every world, song and secret.";
 			default: "";
 		}
