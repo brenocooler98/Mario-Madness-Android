@@ -78,8 +78,50 @@ class Assets
 		@param	type	The asset type to match, or null to match any type
 		@return		Whether the requested asset ID and type exists
 	**/
+	#if mobile
+	static var caseIds:Map<String, String> = null;
+	static var caseLibraries:Int = -1;
+
+	@:access(lime.utils.Assets)
+	public static function resolveCase(id:String):String
+	{
+		if (id == null || LimeAssets.exists(id))
+			return id;
+
+		var libraryCount:Int = 0;
+		for (_ in LimeAssets.libraries.keys())
+			libraryCount++;
+
+		if (caseIds == null || caseLibraries != libraryCount)
+		{
+			caseIds = new Map<String, String>();
+			caseLibraries = libraryCount;
+			for (name in LimeAssets.libraries.keys())
+			{
+				var library = LimeAssets.libraries.get(name);
+				if (library == null)
+					continue;
+				var prefix:String = name == "default" ? "" : name + ":";
+				for (asset in library.list(null))
+					caseIds.set((prefix + asset).toLowerCase(), prefix + asset);
+			}
+		}
+
+		var fixed:String = caseIds.get(id.toLowerCase());
+		return fixed != null ? fixed : id;
+	}
+	#else
+	public static inline function resolveCase(id:String):String
+	{
+		return id;
+	}
+	#end
+
 	public static function exists(id:String, type:AssetType = null):Bool
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if lime
 		return LimeAssets.exists(id, cast type);
 		#else
@@ -120,6 +162,9 @@ class Assets
 	**/
 	public static function getBitmapData(id:String, useCache:Bool = true):BitmapData
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if (lime && tools && !display)
 		if (useCache && cache.enabled && cache.hasBitmapData(id))
 		{
@@ -168,6 +213,9 @@ class Assets
 	**/
 	public static function getBytes(id:String):ByteArray
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if lime
 		return LimeAssets.getBytes(id);
 		#else
@@ -190,6 +238,9 @@ class Assets
 	**/
 	public static function getFont(id:String, useCache:Bool = true):Font
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if (lime && tools && !display && !macro)
 		if (useCache && cache.enabled && cache.hasFont(id))
 		{
@@ -278,6 +329,9 @@ class Assets
 
 	public static function getMusic(id:String, useCache:Bool = true):Sound
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if (lime_vorbis && lime > "7.9.0")
 		var path = getPath(id);
 		var vorbisFile = VorbisFile.fromFile(path);
@@ -309,6 +363,9 @@ class Assets
 	**/
 	public static function getPath(id:String):String
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if lime
 		return LimeAssets.getPath(id);
 		#else
@@ -331,6 +388,9 @@ class Assets
 	**/
 	public static function getSound(id:String, useCache:Bool = true):Sound
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if (lime && tools && !display)
 		if (useCache && cache.enabled && cache.hasSound(id))
 		{
@@ -376,6 +436,9 @@ class Assets
 	**/
 	public static function getText(id:String):String
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if lime
 		return LimeAssets.getText(id);
 		#else
@@ -445,6 +508,9 @@ class Assets
 	**/
 	public static function isLocal(id:String, type:AssetType = null, useCache:Bool = true):Bool
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if (lime && tools && !display)
 		if (useCache && cache.enabled)
 		{
@@ -537,6 +603,9 @@ class Assets
 	**/
 	public static function loadBitmapData(id:String, useCache:Null<Bool> = true):Future<BitmapData>
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		if (useCache == null) useCache = true;
 
 		#if (lime && tools && !display)
@@ -597,6 +666,9 @@ class Assets
 	**/
 	public static function loadBytes(id:String):Future<ByteArray>
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if lime
 		var promise = new Promise<ByteArray>();
 		var future = LimeAssets.loadBytes(id);
@@ -626,6 +698,9 @@ class Assets
 	**/
 	public static function loadFont(id:String, useCache:Null<Bool> = true):Future<Font>
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		if (useCache == null) useCache = true;
 
 		#if (lime && tools && !display && !macro)
@@ -713,6 +788,9 @@ class Assets
 	**/
 	public static function loadMusic(id:String, useCache:Null<Bool> = true):Future<Sound>
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		if (useCache == null) useCache = true;
 
 		#if lime
@@ -815,6 +893,9 @@ class Assets
 	**/
 	public static function loadSound(id:String, useCache:Null<Bool> = true):Future<Sound>
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		if (useCache == null) useCache = true;
 
 		#if lime
@@ -864,6 +945,9 @@ class Assets
 	**/
 	public static function loadText(id:String):Future<String>
 	{
+		#if mobile
+		id = resolveCase(id);
+		#end
 		#if lime
 		var future = LimeAssets.loadText(id);
 		return future;

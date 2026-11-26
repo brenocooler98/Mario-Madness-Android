@@ -173,25 +173,32 @@ def store_key(path, xml_path, options):
 
 
 def settings_of(options):
-    return f"{options.trim}:{options.quantize}:{options.colors}:{options.min_psnr}:{options.oxipng}:{options.oxipng_level}"
+    return f"{options.trim}:{options.quantize}:{options.colors}:{options.min_psnr}:{options.oxipng}:{options.oxipng_level}:{options.max_size}"
 
 
 def restore_from_store(path, xml_path, folder):
     stored_png = os.path.join(folder, "sprite.png")
     if not os.path.exists(stored_png):
-        return False
+        return None
     shutil.copyfile(stored_png, path)
     stored_xml = os.path.join(folder, "atlas.xml")
     if os.path.exists(stored_xml):
         shutil.copyfile(stored_xml, xml_path)
-    return True
+    stored_size = os.path.join(folder, "size.json")
+    if os.path.exists(stored_size):
+        with open(stored_size, "r", encoding="utf-8") as handle:
+            return tuple(json.load(handle))
+    return ()
 
 
-def save_to_store(path, xml_path, folder, has_xml):
+def save_to_store(path, xml_path, folder, has_xml, original_size):
     os.makedirs(folder, exist_ok=True)
     shutil.copyfile(path, os.path.join(folder, "sprite.tmp"))
     if has_xml:
         shutil.copyfile(xml_path, os.path.join(folder, "atlas.xml"))
+    if original_size:
+        with open(os.path.join(folder, "size.json"), "w", encoding="utf-8") as handle:
+            json.dump(list(original_size), handle)
     os.replace(os.path.join(folder, "sprite.tmp"), os.path.join(folder, "sprite.png"))
 
 
@@ -201,17 +208,22 @@ def optimize(path, options):
         key = store_key(path, xml_path, options)
         folder = os.path.join(options.store, key[:2], key)
         before = os.path.getsize(path)
-        if restore_from_store(path, xml_path, folder):
-            return path, before, os.path.getsize(path), True, key, True
+        restored = restore_from_store(path, xml_path, folder)
+        if restored is not None:
+            return path, before, os.path.getsize(path), True, key, True, restored or None
         result = optimize_file(path, xml_path, options)
-        save_to_store(path, xml_path, folder, result[4])
-        return result[0], result[1], result[2], result[3], key, False
+        save_to_store(path, xml_path, folder, result[4], result[5])
+        return result[0], result[1], result[2], result[3], key, False, result[5]
     result = optimize_file(path, xml_path, options)
-    return result[0], result[1], result[2], result[3], None, False
+    return result[0], result[1], result[2], result[3], None, False, result[5]
+
+
+def original_size_bytes(path):
+    return os.path.getsize(path)
 
 
 def optimize_file(path, xml_path, options):
-    original_size = os.path.getsize(path)
+    file_size = os.path.getsize(path)
     new_xml = None
 
     with Image.open(path) as source:
@@ -221,6 +233,14 @@ def optimize_file(path, xml_path, options):
         if options.trim and os.path.exists(xml_path):
             image, new_xml = trim_atlas(image, xml_path)
 
+        original_size = None
+        if options.max_size > 0 and max(image.size) > options.max_size:
+            original_size = image.size
+            factor = options.max_size / max(image.size)
+            target = (max(1, round(image.width * factor)), max(1, round(image.height * factor)))
+            mode = "RGBA" if image.mode in ("RGBA", "LA", "P", "PA") else "RGB"
+            image = image.convert(mode).resize(target, Image.Resampling.LANCZOS)
+
         best = None
         for candidate in candidates(image, options):
             data = encode(candidate)
@@ -228,15 +248,15 @@ def optimize_file(path, xml_path, options):
                 best = data
 
     if best is None:
-        return path, original_size, original_size, False, False
+        return path, original_size_bytes(path), original_size_bytes(path), False, False, None
 
-    if new_xml is None and len(best) >= original_size:
+    if new_xml is None and original_size is None and len(best) >= file_size:
         if options.oxipng and not options.dry_run:
             run_oxipng(path, options.oxipng_level)
-        return path, original_size, os.path.getsize(path), False, False
+        return path, file_size, os.path.getsize(path), False, False, None
 
     if options.dry_run:
-        return path, original_size, len(best), True, new_xml is not None
+        return path, file_size, len(best), True, new_xml is not None, original_size
 
     temp_path = path + ".tmp"
     with open(temp_path, "wb") as handle:
@@ -250,7 +270,7 @@ def optimize_file(path, xml_path, options):
     if options.oxipng:
         run_oxipng(path, options.oxipng_level)
 
-    return path, original_size, os.path.getsize(path), True, new_xml is not None
+    return path, file_size, os.path.getsize(path), True, new_xml is not None, original_size
 
 
 def collect(roots, excludes):
@@ -282,6 +302,13 @@ def load_cache(path):
 def save_cache(path, cache):
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(cache, handle, indent=1, sort_keys=True)
+
+
+def runtime_path(path):
+    relative = os.path.relpath(path).replace("\\", "/")
+    if relative.startswith("assets/preload/"):
+        return "assets/" + relative[len("assets/preload/"):]
+    return relative
 
 
 def prune_store(store, used_keys):
@@ -325,6 +352,8 @@ def main():
     parser.add_argument("--cache", default=CACHE_NAME, help="Cache file path")
     parser.add_argument("--store", help="Folder that keeps optimized results keyed by the original file, used to skip work between builds")
     parser.add_argument("--prune", action="store_true", help="Remove results from --store that were not used in this run")
+    parser.add_argument("--max-size", type=int, default=0, help="Downscale textures bigger than this, the game keeps them at their original size on screen")
+    parser.add_argument("--scale-manifest", help="JSON file that receives the original size of every downscaled texture")
     options = parser.parse_args()
 
     if options.oxipng and shutil.which("oxipng") is None:
@@ -351,13 +380,20 @@ def main():
     failed = 0
     reused = 0
     used_keys = set()
+    scaled = {}
+    if options.scale_manifest and os.path.exists(options.scale_manifest):
+        try:
+            with open(options.scale_manifest, "r", encoding="utf-8") as handle:
+                scaled = json.load(handle)
+        except (OSError, ValueError):
+            scaled = {}
 
     with ProcessPoolExecutor(max_workers=max(1, options.jobs)) as pool:
         jobs = {pool.submit(optimize, path, options): path for path in pending}
         for index, job in enumerate(as_completed(jobs), 1):
             path = jobs[job]
             try:
-                _, before, after, modified, key, from_store = job.result()
+                _, before, after, modified, key, from_store, texture_size = job.result()
             except Exception as error:
                 failed += 1
                 print(f"[{index}/{len(pending)}] failed {path}: {error}")
@@ -367,6 +403,11 @@ def main():
             total_after += after
             if key is not None:
                 used_keys.add(key)
+            runtime_id = runtime_path(path)
+            if texture_size:
+                scaled[runtime_id] = [int(texture_size[0]), int(texture_size[1])]
+            else:
+                scaled.pop(runtime_id, None)
             if from_store:
                 reused += 1
             elif modified:
@@ -378,6 +419,14 @@ def main():
 
     if not options.dry_run and not options.no_cache:
         save_cache(options.cache, cache)
+
+    if options.scale_manifest and not options.dry_run:
+        folder = os.path.dirname(options.scale_manifest)
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+        with open(options.scale_manifest, "w", encoding="utf-8") as handle:
+            json.dump(scaled, handle, indent=1, sort_keys=True)
+        print(f"{len(scaled)} downscaled textures written to {options.scale_manifest}")
 
     if options.store and options.prune and not options.dry_run and failed == 0:
         removed = prune_store(options.store, used_keys)

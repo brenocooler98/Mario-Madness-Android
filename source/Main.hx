@@ -46,7 +46,7 @@ class Main extends Sprite {
 	public static var fpsVar:FPS;
 
 	public static var skipNextDump:Bool = false;
-	public static var forceNoVramSprites:Bool = #if (desktop && !web) false #else true #end;
+	public static var forceNoVramSprites:Bool = #if web true #else false #end;
 
 	public static function main():Void {
 		Lib.current.addChild(new Main());

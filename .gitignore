@@ -2,3 +2,4 @@ export/
 assets/shared/images/mario/landstage.png
 assets/shared/images/mario/ExePlaceholder.png
 .sprite_cache.json
+assets/preload/data/textureScale.json

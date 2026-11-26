@@ -72,6 +72,7 @@ class Paths
 				if (obj != null) {
 					openfl.Assets.cache.removeBitmapData(key);
 					FlxG.bitmap._cache.remove(key);
+					flixel.graphics.tile.TextureScale.remove(obj);
 					obj.destroy();
 					currentTrackedAssets.remove(key);
 				}
@@ -92,6 +93,7 @@ class Paths
 			if (obj != null && !currentTrackedAssets.exists(key)) {
 				openfl.Assets.cache.removeBitmapData(key);
 				FlxG.bitmap._cache.remove(key);
+				flixel.graphics.tile.TextureScale.remove(obj);
 				obj.destroy();
 			}
 		}
@@ -212,7 +214,11 @@ class Paths
 			return file;
 		}
 		#end
-		return #if android 'videos:' + #end 'assets/videos/$key.$VIDEO_EXT';
+		#if android
+		return mobile.StorageUtil.cacheAsset(OpenFlAssets.resolveCase('videos:assets/videos/$key.$VIDEO_EXT'), 'videos/$key.$VIDEO_EXT');
+		#else
+		return 'assets/videos/$key.$VIDEO_EXT';
+		#end
 	}
 
 	static public function sound(key:String, ?library:String):Sound
@@ -375,6 +381,7 @@ class Paths
 		if (OpenFlAssets.exists(path, IMAGE)) {
 			if(!currentTrackedAssets.exists(path)) {
 				var newGraphic:FlxGraphic = FlxG.bitmap.add(path, false, path);
+				applyTextureScale(newGraphic, path);
 				newGraphic.persist = true;
 				currentTrackedAssets.set(path, newGraphic);
 			}
@@ -383,6 +390,35 @@ class Paths
 		}
 		trace('oh no ( ${path} ) returning null NOOOO');
 		return null;
+	}
+
+	static var textureSizes:Map<String, Array<Int>> = null;
+
+	static function applyTextureScale(graphic:FlxGraphic, path:String):Void
+	{
+		if (graphic == null)
+			return;
+
+		if (textureSizes == null)
+		{
+			textureSizes = new Map<String, Array<Int>>();
+			var manifest:String = getPreloadPath('data/textureScale.json');
+			if (OpenFlAssets.exists(manifest, TEXT))
+			{
+				try
+				{
+					var data:Dynamic = haxe.Json.parse(OpenFlAssets.getText(manifest));
+					for (key in Reflect.fields(data))
+						textureSizes.set(key, Reflect.field(data, key));
+				}
+				catch (e:Dynamic) {}
+			}
+		}
+
+		var key:String = path.indexOf(':') != -1 ? path.substr(path.indexOf(':') + 1) : path;
+		var size:Array<Int> = textureSizes.get(key);
+		if (size != null && size.length >= 2)
+			flixel.graphics.tile.TextureScale.apply(graphic, size[0], size[1]);
 	}
 
 	public static var currentTrackedSounds:Map<String, Sound> = [];
