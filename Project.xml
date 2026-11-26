@@ -155,6 +155,12 @@
 	<haxedef name="NAPE_RELEASE_BUILD" unless="debug" />
 
 	<haxedef name="no-deprecation-warnings"/>
+
+	<section if="android">
+		<haxedef name="HXCPP_CHECK_POINTER" />
+		<haxedef name="HXCPP_STACK_LINE" />
+		<haxedef name="HXCPP_STACK_TRACE" />
+	</section>
 	
 	<!-- _________________________________ Custom _______________________________ -->
 	

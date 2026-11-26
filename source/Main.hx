@@ -136,7 +136,10 @@ class Main extends Sprite {
 
 		try
 		{
-			File.saveContent(StorageUtil.getCrashPath() + 'crash-' + Date.now().getTime() + '.txt', message);
+			var name:String = 'crash-' + Date.now().getTime() + '.txt';
+			var path:String = StorageUtil.getCrashPath() + name;
+			File.saveContent(path, message);
+			androidmanager.content.Storage.saveToDownloads(path, 'MarioMadness', name);
 		}
 		catch (e:Dynamic) {}
 

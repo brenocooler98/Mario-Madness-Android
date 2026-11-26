@@ -86,6 +86,11 @@ jobs:
       - name: List Haxelibs
         run: haxelib list
 
+      - name: Use Bundled Lua
+        run: |
+          LUA_PATH=$(haxelib libpath linc_luajit)
+          for LIB in "$LUA_PATH"/lib/lua/lib/Android/*.a; do printf '!<arch>\n' > "$LIB"; done
+
       - name: Restore Sprite Cache
         id: cache-sprites
         uses: actions/cache/restore@v4

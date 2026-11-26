@@ -47,6 +47,9 @@ class FunkinLua
 	public function new(script:String)
 	{
 		#if LUA_ALLOWED
+		#if android
+		mobile.native.LuaSource.init();
+		#end
 		lua = LuaL.newstate();
 		LuaL.openlibs(lua);
 		Lua.init_callbacks(lua);
