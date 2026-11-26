@@ -4,3 +4,4 @@ assets/shared/images/mario/ExePlaceholder.png
 .sprite_cache.json
 assets/preload/data/textureScale.json
 __pycache__/
+optimize-report.json

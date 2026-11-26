@@ -104,7 +104,7 @@ jobs:
         run: |
           pip install --quiet --break-system-packages pillow numpy pyoxipng || pip install --quiet pillow numpy pyoxipng
           command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
-          python3 tools/optimize_sprites.py assets --trim --repack --audio --json --video --max-size 4096 --scale-manifest assets/preload/data/textureScale.json --no-cache --store ~/sprite-store --prune
+          python3 tools/optimize_sprites.py assets --trim --repack --audio --json --video --remove-junk --report optimize-report.json --max-size 4096 --scale-manifest assets/preload/data/textureScale.json --no-cache --store ~/sprite-store --prune
 
       - name: Save Sprite Cache
         if: steps.cache-sprites.outputs.cache-hit != 'true'

@@ -23,7 +23,7 @@ try:
 except ImportError:
     oxipng = None
 
-VERSION = "5"
+VERSION = "6"
 CACHE_NAME = ".sprite_cache.json"
 SUBTEXTURE = re.compile(r"<SubTexture\b[^>]*>")
 NUMBER = r'(\b{}\s*=\s*")(-?\d+(?:\.\d+)?)(")'
@@ -337,6 +337,7 @@ def repack_atlas(pixels, xml_text, frames, limit, target):
 
 
 def minify_xml(text):
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     return re.sub(r">\s+<", "><", text.strip())
 
 
@@ -354,9 +355,11 @@ def encode_oxipng(pixels, options):
         pixels = np.ascontiguousarray(pixels[:, :, :3])
     color = oxipng.ColorType.rgba() if pixels.shape[2] == 4 else oxipng.ColorType.rgb()
     raw = oxipng.RawImage(np.ascontiguousarray(pixels).tobytes(), pixels.shape[1], pixels.shape[0], color_type=color, bit_depth=8)
+    small = options.zopfli_limit > 0 and pixels.nbytes <= options.zopfli_limit * 4
+    deflate = oxipng.Deflaters.zopfli(options.zopfli_iterations) if small else oxipng.Deflaters.libdeflater(options.compression)
     return raw.create_optimized_png(
         level=options.level,
-        deflate=oxipng.Deflaters.libdeflater(options.compression),
+        deflate=deflate,
         strip=oxipng.StripChunks.safe(),
         fast_evaluation=options.level <= 2,
     )
@@ -400,7 +403,7 @@ def quantize(pixels, options):
 
 
 def settings_of(options):
-    return f"{VERSION}:{options.trim}:{options.repack}:{options.quantize}:{options.colors}:{options.min_psnr}:{options.level}:{options.compression}:{options.max_size}:{oxipng is not None}"
+    return f"{VERSION}:{options.trim}:{options.repack}:{options.quantize}:{options.colors}:{options.min_psnr}:{options.level}:{options.compression}:{options.zopfli_limit}:{options.zopfli_iterations}:{options.max_size}:{oxipng is not None}"
 
 
 def store_key(path, xml_path, options):
@@ -731,7 +734,46 @@ def optimize_video(path, options):
             os.remove(temp_path)
 
 
+def optimize_xml(path, options):
+    before = os.path.getsize(path)
+    with open(path, "r", encoding="utf-8-sig") as handle:
+        text = handle.read()
+    if not SUBTEXTURE.search(text):
+        return before, False, ""
+    output = minify_xml(text)
+    size = len(output.encode("utf-8"))
+    if size >= before:
+        return before, False, ""
+    if not options.dry_run:
+        with open(path + ".tmp", "w", encoding="utf-8", newline="") as handle:
+            handle.write(output)
+        os.replace(path + ".tmp", path)
+    return size, True, ""
+
+
+JUNK_PATTERNS = ("*.pdn", "*.psd", "*.fla", "*.xcf", "*.kra", "*.ase", "*.aseprite", "*.sai", "*.clip", "Thumbs.db", ".DS_Store", "desktop.ini", "*.bak", "*.tmp")
+
+
+def remove_junk(roots, dry_run):
+    removed = 0
+    size = 0
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        for folder, _, names in os.walk(root):
+            for name in names:
+                if any(fnmatch.fnmatch(name, pattern) for pattern in JUNK_PATTERNS):
+                    path = os.path.join(folder, name)
+                    size += os.path.getsize(path)
+                    removed += 1
+                    if not dry_run:
+                        os.remove(path)
+    return removed, size
+
+
 def kind_settings(kind, options):
+    if kind == "xml":
+        return f"xml:{VERSION}"
     if kind == "video":
         return f"video:{VERSION}:{options.video_crf}:{options.video_bitrate}:{options.video_width}x{options.video_height}"
     if kind == "audio":
@@ -742,6 +784,8 @@ def kind_settings(kind, options):
 
 
 def optimize_job(kind, path, options, grid):
+    if kind == "xml":
+        return run_single(kind, path, options, optimize_xml)
     if kind == "video":
         return run_single(kind, path, options, optimize_video)
     if kind == "audio":
@@ -866,6 +910,10 @@ def main():
     parser.add_argument("--min-psnr", type=float, default=38.0, help="Minimum quality for --quantize")
     parser.add_argument("--level", type=int, default=2, help="oxipng optimization level from 0 to 6")
     parser.add_argument("--compression", type=int, default=9, help="libdeflate compression from 1 to 12")
+    parser.add_argument("--zopfli-limit", type=int, default=0, help="Use zopfli for textures up to this many bytes of pixels divided by 4, slow but smaller")
+    parser.add_argument("--zopfli-iterations", type=int, default=15, help="Zopfli iterations used by --zopfli-limit")
+    parser.add_argument("--remove-junk", action="store_true", help="Delete editor and system files that the game never loads")
+    parser.add_argument("--report", help="JSON file that receives a summary of the run")
     parser.add_argument("--fast", action="store_true", help="Fastest settings, good for local tests")
     parser.add_argument("--best", action="store_true", help="Smallest files, slower")
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 1, help="Parallel workers")
@@ -892,11 +940,18 @@ def main():
         options.level, options.compression = 1, 6
     if options.best:
         options.level, options.compression = 4, 12
+        if options.zopfli_limit == 0:
+            options.zopfli_limit = 262144
 
     if oxipng is None:
         print("pyoxipng was not found, using Pillow, run: pip install pyoxipng")
 
     started = time.time()
+    if options.remove_junk:
+        junk_count, junk_size = remove_junk(options.paths, options.dry_run)
+        if junk_count:
+            print(f"Removed {junk_count} junk files ({human(junk_size)})")
+
     grid = grid_images(options.source)
     cache = {} if options.no_cache else load_cache(options.cache)
 
@@ -912,6 +967,8 @@ def main():
         else:
             print("ffmpeg was not found, skipping videos")
     if options.json:
+        sprite_xml = {os.path.splitext(path)[0] + ".xml" for kind, path in work if kind == "sprite"}
+        work += [("xml", path) for path in collect_extension(options.paths, options.exclude, ".xml") if path not in sprite_xml]
         manifest = os.path.abspath(options.scale_manifest) if options.scale_manifest else None
         work += [("json", path) for path in collect_extension(options.paths, options.exclude, ".json") if os.path.abspath(path) != manifest]
 
@@ -936,6 +993,7 @@ def main():
     reused = 0
     repacked = 0
     used_keys = set()
+    per_kind = {}
     scaled = {}
     if options.scale_manifest and os.path.exists(options.scale_manifest):
         try:
@@ -957,6 +1015,10 @@ def main():
 
             total_before += before
             total_after += after
+            stats = per_kind.setdefault(kind, [0, 0, 0])
+            stats[0] += before
+            stats[1] += after
+            stats[2] += 1
             if key is not None:
                 used_keys.add(key)
             if kind == "sprite":
@@ -993,6 +1055,15 @@ def main():
         removed = prune_store(options.store, used_keys)
         if removed:
             print(f"Removed {removed} unused results from the store")
+
+    for kind, (before, after, count) in sorted(per_kind.items()):
+        print(f"  {kind}: {count} files, {human(before)} -> {human(after)}")
+
+    if options.report and not options.dry_run:
+        report = {kind: {"files": count, "before": before, "after": after} for kind, (before, after, count) in per_kind.items()}
+        report["total"] = {"before": total_before, "after": total_after, "failed": failed, "seconds": round(time.time() - started, 1)}
+        with open(options.report, "w", encoding="utf-8") as handle:
+            json.dump(report, handle, indent=1, sort_keys=True)
 
     saved = total_before - total_after
     percent = (saved / total_before * 100) if total_before else 0
