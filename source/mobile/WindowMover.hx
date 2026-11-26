@@ -7,18 +7,63 @@ import lime.system.JNI;
 class WindowMover
 {
 	#if android
-	static var setOffsetJNI:Dynamic = null;
+	static var setWindowJNI:Dynamic = null;
+	static var setControlsJNI:Dynamic = null;
+	static var addImageJNI:Dynamic = null;
+	static var clearImagesJNI:Dynamic = null;
 	#end
 
-	public static function setOffset(x:Float, y:Float):Void
+	public static function setWindow(active:Bool, left:Int, top:Int, right:Int, bottom:Int):Void
 	{
 		#if android
 		try
 		{
-			if (setOffsetJNI == null)
-				setOffsetJNI = JNI.createStaticMethod('mariomadness/WindowMover', 'setOffset', '(FF)V');
-			if (setOffsetJNI != null)
-				setOffsetJNI(x, y);
+			if (setWindowJNI == null)
+				setWindowJNI = JNI.createStaticMethod('mariomadness/WindowMover', 'setWindow', '(ZIIII)V');
+			if (setWindowJNI != null)
+				setWindowJNI(active, left, top, right, bottom);
+		}
+		catch (e:Dynamic) {}
+		#end
+	}
+
+	public static function setControls(ops:String):Void
+	{
+		#if android
+		try
+		{
+			if (setControlsJNI == null)
+				setControlsJNI = JNI.createStaticMethod('mariomadness/WindowMover', 'setControls', '(Ljava/lang/String;)V');
+			if (setControlsJNI != null)
+				setControlsJNI(ops);
+		}
+		catch (e:Dynamic) {}
+		#end
+	}
+
+	public static function addImage(key:String, data:String):Void
+	{
+		#if android
+		try
+		{
+			if (addImageJNI == null)
+				addImageJNI = JNI.createStaticMethod('mariomadness/WindowMover', 'addImage', '(Ljava/lang/String;Ljava/lang/String;)V');
+			if (addImageJNI != null)
+				addImageJNI(key, data);
+		}
+		catch (e:Dynamic) {}
+		#end
+	}
+
+	public static function clearImages():Void
+	{
+		#if android
+		try
+		{
+			if (clearImagesJNI == null)
+				clearImagesJNI = JNI.createStaticMethod('mariomadness/WindowMover', 'clearImages', '()V');
+			if (clearImagesJNI != null)
+				clearImagesJNI();
 		}
 		catch (e:Dynamic) {}
 		#end

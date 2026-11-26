@@ -46,6 +46,11 @@ class MobileInput
 			buttons.push(button);
 	}
 
+	public static function getButtons():Array<TouchButton>
+	{
+		return buttons;
+	}
+
 	public static function unregister(button:TouchButton):Void
 	{
 		buttons.remove(button);

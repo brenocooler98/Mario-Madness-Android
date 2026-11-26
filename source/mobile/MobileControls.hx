@@ -30,6 +30,7 @@ class MobileControls
 		FlxG.cameras.add(camera, false);
 		mobileCameras.push(camera);
 		cameraBases.set(camera, [camera.x, camera.y]);
+		camera.visible = camerasVisible;
 		camera.x += shiftX;
 		camera.y += shiftY;
 		return camera;
@@ -41,6 +42,16 @@ class MobileControls
 		cameraBases.remove(camera);
 		if (camera != null && FlxG.cameras.list.contains(camera))
 			FlxG.cameras.remove(camera);
+	}
+
+	static var camerasVisible:Bool = true;
+
+	public static function setCamerasVisible(value:Bool):Void
+	{
+		camerasVisible = value;
+		for (camera in mobileCameras)
+			if (camera != null)
+				camera.visible = value;
 	}
 
 	public static function shiftCameras(x:Float, y:Float):Void

@@ -6,6 +6,8 @@ import flixel.FlxState;
 
 class MobileButton extends FlxSprite
 {
+	public static var all(default, null):Array<MobileButton> = [];
+
 	public var owner:FlxState;
 	public var control:Control;
 
@@ -25,6 +27,7 @@ class MobileButton extends FlxSprite
 		antialiasing = true;
 
 		MobileInput.addBlocker(this);
+		all.push(this);
 	}
 
 	override function update(elapsed:Float):Void
@@ -54,6 +57,7 @@ class MobileButton extends FlxSprite
 	override function destroy():Void
 	{
 		MobileInput.removeBlocker(this);
+		all.remove(this);
 		owner = null;
 		super.destroy();
 	}

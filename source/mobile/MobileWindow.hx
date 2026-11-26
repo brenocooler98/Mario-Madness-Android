@@ -3,10 +3,10 @@ package mobile;
 import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.math.FlxRect;
-import openfl.geom.Point;
 import openfl.Lib;
 import openfl.display.DisplayObject;
 import openfl.display.Shape;
+import openfl.geom.Point;
 
 class MobileWindow
 {
@@ -16,30 +16,54 @@ class MobileWindow
 	public static var displayHeight(default, null):Int = 1080;
 	public static var x(default, null):Int = 320;
 	public static var y(default, null):Int = 180;
-
-	static var offsetX:Float = 0;
-	static var offsetY:Float = 0;
-	static var sentOffsetX:Float = 0;
-	static var sentOffsetY:Float = 0;
-	static var offsetSent:Bool = false;
+	public static var fullscreen(default, null):Bool = false;
+	public static var overscan(default, null):Float = 0;
+	public static var windowed(default, null):Bool = false;
 
 	static var target:DisplayObject;
 	static var masks:Shape;
 	static var initialized:Bool = false;
-	static var maskKey:String = '';
-	public static var fullscreen(default, null):Bool = false;
-	public static var overscan(default, null):Float = 0;
+	static var dirty:Bool = true;
 
 	static var viewX:Float = 0;
 	static var viewY:Float = 0;
 	static var viewWidth:Float = 0;
 	static var viewHeight:Float = 0;
+	static var offsetX:Float = 0;
+	static var offsetY:Float = 0;
+
+	static var lastStageWidth:Int = -1;
+	static var lastStageHeight:Int = -1;
+	static var lastRootX:Float = 0;
+	static var lastRootY:Float = 0;
+	static var lastRootScale:Float = 0;
+	static var lastTargetX:Float = 0;
+	static var lastTargetY:Float = 0;
+	static var lastTargetScale:Float = 0;
+
+	static var maskX:Float = -1;
+	static var maskY:Float = -1;
+	static var maskW:Float = -1;
+	static var maskH:Float = -1;
+	static var maskStageW:Int = -1;
+	static var maskStageH:Int = -1;
+
+	static var sentWindowed:Bool = false;
+	static var sentLeft:Int = 0;
+	static var sentTop:Int = 0;
+	static var sentRight:Int = 0;
+	static var sentBottom:Int = 0;
+	static var windowSent:Bool = false;
+
+	static var pointA:Point = new Point();
+	static var pointB:Point = new Point();
 
 	public static function init(main:DisplayObject, width:Int, height:Int):Void
 	{
 		target = main;
 		MobileWindow.width = width;
 		MobileWindow.height = height;
+		dirty = true;
 
 		if (initialized)
 			return;
@@ -47,15 +71,28 @@ class MobileWindow
 
 		masks = new Shape();
 		Lib.current.stage.addChild(masks);
-		FlxG.signals.preDraw.add(apply);
-		FlxG.signals.gameResized.add(function(_, _) apply());
+		FlxG.signals.preDraw.add(onPreDraw);
+		FlxG.signals.gameResized.add(function(_, _) invalidate());
 		FlxG.signals.preStateSwitch.add(center);
 		apply();
+	}
+
+	static function onPreDraw():Void
+	{
+		apply();
+		ControlsOverlay.update();
+	}
+
+	public static inline function invalidate():Void
+	{
+		dirty = true;
 	}
 
 	public static function resize(width:Int, height:Int):Void
 	{
 		if (width <= 0 || height <= 0)
+			return;
+		if (width == MobileWindow.width && height == MobileWindow.height)
 			return;
 		var centerX:Float = MobileWindow.x + MobileWindow.width / 2;
 		var centerY:Float = MobileWindow.y + MobileWindow.height / 2;
@@ -63,20 +100,24 @@ class MobileWindow
 		MobileWindow.height = height;
 		MobileWindow.x = Math.round(centerX - width / 2);
 		MobileWindow.y = Math.round(centerY - height / 2);
+		dirty = true;
 		apply();
 	}
 
 	public static function move(x:Int, y:Int):Void
 	{
+		if (x == MobileWindow.x && y == MobileWindow.y)
+			return;
 		MobileWindow.x = x;
 		MobileWindow.y = y;
-		apply();
+		dirty = true;
 	}
 
 	public static function center():Void
 	{
 		x = Math.round((displayWidth - width) / 2);
 		y = Math.round((displayHeight - height) / 2);
+		dirty = true;
 		apply();
 	}
 
@@ -84,12 +125,14 @@ class MobileWindow
 	{
 		fullscreen = value;
 		ScreenStyle.apply(value);
+		dirty = true;
 		apply();
 	}
 
 	public static function reset():Void
 	{
-		resize(1280, 720);
+		width = 1280;
+		height = 720;
 		center();
 	}
 
@@ -103,6 +146,23 @@ class MobileWindow
 		if (stageWidth <= 0 || stageHeight <= 0)
 			return;
 
+		var root:DisplayObject = Lib.current;
+		var rootScale:Float = root.scaleX != 0 ? root.scaleX : 1;
+		var rootScaleY:Float = root.scaleY != 0 ? root.scaleY : 1;
+
+		if (!dirty && stageWidth == lastStageWidth && stageHeight == lastStageHeight && root.x == lastRootX && root.y == lastRootY && rootScale == lastRootScale
+			&& target.x == lastTargetX && target.y == lastTargetY && target.scaleX == lastTargetScale)
+		{
+			updateOverscan(overscan);
+			return;
+		}
+		dirty = false;
+		lastStageWidth = stageWidth;
+		lastStageHeight = stageHeight;
+		lastRootX = root.x;
+		lastRootY = root.y;
+		lastRootScale = rootScale;
+
 		var previousX:Float = FlxG.scaleMode.scale.x;
 		var previousY:Float = FlxG.scaleMode.scale.y;
 		FlxG.scaleMode.onMeasure(width, height);
@@ -113,24 +173,32 @@ class MobileWindow
 		var cornerX:Float = (stageWidth - width * zoom) / 2;
 		var cornerY:Float = (stageHeight - height * zoom) / 2;
 
-		var root:DisplayObject = Lib.current;
-		var rootScale:Float = root.scaleX != 0 ? root.scaleX : 1;
-		var rootScaleY:Float = root.scaleY != 0 ? root.scaleY : 1;
+		offsetX = Math.round((x - (displayWidth - width) / 2) * zoom);
+		offsetY = Math.round((y - (displayHeight - height) / 2) * zoom);
+		windowed = width != 1280 || height != 720 || offsetX != 0 || offsetY != 0;
 
 		target.scaleX = zoom;
 		target.scaleY = zoom;
-		target.x = ((zoom - 1) * root.x + cornerX) / rootScale;
-		target.y = ((zoom - 1) * root.y + cornerY) / rootScaleY;
+		target.x = ((zoom - 1) * root.x + cornerX + offsetX) / rootScale;
+		target.y = ((zoom - 1) * root.y + cornerY + offsetY) / rootScaleY;
+		lastTargetX = target.x;
+		lastTargetY = target.y;
+		lastTargetScale = target.scaleX;
 
-		var wide:Bool = fullscreen && width == 1280 && height == 720 && cornerX > 0;
+		var wide:Bool = fullscreen && !windowed && cornerX > 0;
 		var extra:Float = 0;
 		if (wide)
 		{
-			var edge:Point = FlxG.game.globalToLocal(new Point(0, cornerY));
+			pointA.setTo(0, cornerY);
+			var edge:Point = FlxG.game.globalToLocal(pointA);
 			extra = Math.max(0, Math.ceil(-edge.x));
 		}
 		updateOverscan(wide ? extra : 0);
-		updateOffset(zoom);
+
+		var windowLeft:Float = cornerX + offsetX;
+		var windowTop:Float = cornerY + offsetY;
+		var windowWidth:Float = width * zoom;
+		var windowHeight:Float = height * zoom;
 
 		if (wide && extra > 0)
 		{
@@ -144,27 +212,32 @@ class MobileWindow
 		{
 			viewX = cornerX;
 			viewY = cornerY;
-			viewWidth = width * zoom;
-			viewHeight = height * zoom;
-			drawMasks(stageWidth, stageHeight, cornerX, cornerY, width * zoom, height * zoom);
+			viewWidth = windowWidth;
+			viewHeight = windowHeight;
+			drawMasks(stageWidth, stageHeight, windowLeft, windowTop, windowWidth, windowHeight);
 		}
-	}
 
-	static function updateOffset(zoom:Float):Void
-	{
-		offsetX = Math.round((x - (displayWidth - width) / 2) * zoom);
-		offsetY = Math.round((y - (displayHeight - height) / 2) * zoom);
-
-		var origin:Point = FlxG.game.globalToLocal(new Point(0, 0));
-		var moved:Point = FlxG.game.globalToLocal(new Point(offsetX, offsetY));
+		pointA.setTo(0, 0);
+		pointB.setTo(offsetX, offsetY);
+		var origin:Point = FlxG.game.globalToLocal(pointA);
+		var moved:Point = FlxG.game.globalToLocal(pointB);
 		MobileControls.shiftCameras(origin.x - moved.x, origin.y - moved.y);
 
-		if (offsetSent && offsetX == sentOffsetX && offsetY == sentOffsetY)
+		sendWindow(Math.floor(windowLeft), Math.floor(windowTop), Math.ceil(windowLeft + windowWidth), Math.ceil(windowTop + windowHeight));
+		ControlsOverlay.setActive(windowed);
+	}
+
+	static function sendWindow(left:Int, top:Int, right:Int, bottom:Int):Void
+	{
+		if (windowSent && sentWindowed == windowed && (!windowed || (left == sentLeft && top == sentTop && right == sentRight && bottom == sentBottom)))
 			return;
-		offsetSent = true;
-		sentOffsetX = offsetX;
-		sentOffsetY = offsetY;
-		WindowMover.setOffset(offsetX, offsetY);
+		windowSent = true;
+		sentWindowed = windowed;
+		sentLeft = left;
+		sentTop = top;
+		sentRight = right;
+		sentBottom = bottom;
+		WindowMover.setWindow(windowed, left, top, right, bottom);
 	}
 
 	static function updateOverscan(extra:Float):Void
@@ -189,8 +262,10 @@ class MobileWindow
 		if (FlxG.game == null || viewWidth <= 0 || viewHeight <= 0)
 			return FlxRect.get(0, 0, FlxG.width, FlxG.height);
 
-		var topLeft:Point = FlxG.game.globalToLocal(new Point(viewX, viewY));
-		var bottomRight:Point = FlxG.game.globalToLocal(new Point(viewX + viewWidth, viewY + viewHeight));
+		pointA.setTo(viewX + offsetX, viewY + offsetY);
+		pointB.setTo(viewX + offsetX + viewWidth, viewY + offsetY + viewHeight);
+		var topLeft:Point = FlxG.game.globalToLocal(pointA);
+		var bottomRight:Point = FlxG.game.globalToLocal(pointB);
 		return FlxRect.get(Math.round(topLeft.x), Math.round(topLeft.y), Math.round(bottomRight.x - topLeft.x), Math.round(bottomRight.y - topLeft.y));
 	}
 
@@ -200,24 +275,31 @@ class MobileWindow
 		if (masks.parent != parent || parent.getChildIndex(masks) != parent.numChildren - 1)
 			parent.addChild(masks);
 
-		var key:String = stageWidth + ':' + stageHeight + ':' + x + ':' + y + ':' + w + ':' + h;
-		if (key == maskKey)
+		if (stageWidth == maskStageW && stageHeight == maskStageH && x == maskX && y == maskY && w == maskW && h == maskH)
 			return;
-		maskKey = key;
+		maskStageW = stageWidth;
+		maskStageH = stageHeight;
+		maskX = x;
+		maskY = y;
+		maskW = w;
+		maskH = h;
+
+		var left:Float = Math.max(0, Math.min(stageWidth, x));
+		var top:Float = Math.max(0, Math.min(stageHeight, y));
+		var right:Float = Math.max(0, Math.min(stageWidth, x + w));
+		var bottom:Float = Math.max(0, Math.min(stageHeight, y + h));
 
 		var graphics = masks.graphics;
 		graphics.clear();
 		graphics.beginFill(0x000000);
-		if (y > 0)
-		{
-			graphics.drawRect(0, 0, stageWidth, Math.ceil(y));
-			graphics.drawRect(0, Math.floor(y + h), stageWidth, stageHeight - Math.floor(y + h));
-		}
-		if (x > 0)
-		{
-			graphics.drawRect(0, 0, Math.ceil(x), stageHeight);
-			graphics.drawRect(Math.floor(x + w), 0, stageWidth - Math.floor(x + w), stageHeight);
-		}
+		if (top > 0)
+			graphics.drawRect(0, 0, stageWidth, Math.ceil(top));
+		if (bottom < stageHeight)
+			graphics.drawRect(0, Math.floor(bottom), stageWidth, stageHeight - Math.floor(bottom));
+		if (left > 0)
+			graphics.drawRect(0, top, Math.ceil(left), bottom - top);
+		if (right < stageWidth)
+			graphics.drawRect(Math.floor(right), top, stageWidth - Math.floor(right), bottom - top);
 		graphics.endFill();
 	}
 }
