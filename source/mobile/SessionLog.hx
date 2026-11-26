@@ -118,7 +118,20 @@ class SessionLog
 		catch (e:Dynamic) {}
 	}
 
+	static var memoryText:String = '';
+	static var memoryStamp:Float = -1;
+
 	static function memory():String
+	{
+		var now:Float = Timer.stamp();
+		if (memoryStamp >= 0 && now - memoryStamp < 0.5)
+			return memoryText;
+		memoryStamp = now;
+		memoryText = readMemory();
+		return memoryText;
+	}
+
+	static function readMemory():String
 	{
 		var haxe:Int = Math.round(cpp.vm.Gc.memInfo64(cpp.vm.Gc.MEM_INFO_USAGE) / 1048576);
 		var info = null;

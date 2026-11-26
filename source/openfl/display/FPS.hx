@@ -35,6 +35,7 @@ class FPS extends TextField
 	@:noCompletion private var cacheCount:Int;
 	@:noCompletion private var currentTime:Float;
 	@:noCompletion private var times:Array<Float>;
+	@:noCompletion private var lastTextUpdate:Float = -1000;
 
 	public function new(x:Float = 10, y:Float = 10, color:Int = 0x000000)
 	{
@@ -80,8 +81,9 @@ class FPS extends TextField
 		currentFPS = Math.round((currentCount + cacheCount) / 2);
 		if (currentFPS > ClientPrefs.framerate) currentFPS = ClientPrefs.framerate;
 
-		if (currentCount != cacheCount /*&& visible*/)
+		if (currentCount != cacheCount && visible && currentTime - lastTextUpdate >= 250)
 		{
+			lastTextUpdate = currentTime;
 			text = "FPS: " + currentFPS;
 			var memoryMegas:Float = 0;
 			

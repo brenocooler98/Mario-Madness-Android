@@ -72,6 +72,8 @@ class MobileWindow
 		target = main;
 		MobileWindow.width = width;
 		MobileWindow.height = height;
+		x = Math.round((displayWidth - width) / 2);
+		y = Math.round((displayHeight - height) / 2);
 		dirty = true;
 
 		if (initialized)
