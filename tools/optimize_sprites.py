@@ -162,9 +162,56 @@ def run_oxipng(path, level):
         pass
 
 
+def store_key(path, xml_path, options):
+    digest = hashlib.sha1(settings_of(options).encode())
+    with open(path, "rb") as handle:
+        digest.update(handle.read())
+    if options.trim and os.path.exists(xml_path):
+        with open(xml_path, "rb") as handle:
+            digest.update(handle.read())
+    return digest.hexdigest()
+
+
+def settings_of(options):
+    return f"{options.trim}:{options.quantize}:{options.colors}:{options.min_psnr}:{options.oxipng}:{options.oxipng_level}"
+
+
+def restore_from_store(path, xml_path, folder):
+    stored_png = os.path.join(folder, "sprite.png")
+    if not os.path.exists(stored_png):
+        return False
+    shutil.copyfile(stored_png, path)
+    stored_xml = os.path.join(folder, "atlas.xml")
+    if os.path.exists(stored_xml):
+        shutil.copyfile(stored_xml, xml_path)
+    return True
+
+
+def save_to_store(path, xml_path, folder, has_xml):
+    os.makedirs(folder, exist_ok=True)
+    shutil.copyfile(path, os.path.join(folder, "sprite.tmp"))
+    if has_xml:
+        shutil.copyfile(xml_path, os.path.join(folder, "atlas.xml"))
+    os.replace(os.path.join(folder, "sprite.tmp"), os.path.join(folder, "sprite.png"))
+
+
 def optimize(path, options):
-    original_size = os.path.getsize(path)
     xml_path = os.path.splitext(path)[0] + ".xml"
+    if options.store and not options.dry_run:
+        key = store_key(path, xml_path, options)
+        folder = os.path.join(options.store, key[:2], key)
+        before = os.path.getsize(path)
+        if restore_from_store(path, xml_path, folder):
+            return path, before, os.path.getsize(path), True, key, True
+        result = optimize_file(path, xml_path, options)
+        save_to_store(path, xml_path, folder, result[4])
+        return result[0], result[1], result[2], result[3], key, False
+    result = optimize_file(path, xml_path, options)
+    return result[0], result[1], result[2], result[3], None, False
+
+
+def optimize_file(path, xml_path, options):
+    original_size = os.path.getsize(path)
     new_xml = None
 
     with Image.open(path) as source:
@@ -181,15 +228,15 @@ def optimize(path, options):
                 best = data
 
     if best is None:
-        return path, original_size, original_size, False
+        return path, original_size, original_size, False, False
 
     if new_xml is None and len(best) >= original_size:
         if options.oxipng and not options.dry_run:
             run_oxipng(path, options.oxipng_level)
-        return path, original_size, os.path.getsize(path), False
+        return path, original_size, os.path.getsize(path), False, False
 
     if options.dry_run:
-        return path, original_size, len(best), True
+        return path, original_size, len(best), True, new_xml is not None
 
     temp_path = path + ".tmp"
     with open(temp_path, "wb") as handle:
@@ -203,7 +250,7 @@ def optimize(path, options):
     if options.oxipng:
         run_oxipng(path, options.oxipng_level)
 
-    return path, original_size, os.path.getsize(path), True
+    return path, original_size, os.path.getsize(path), True, new_xml is not None
 
 
 def collect(roots, excludes):
@@ -237,6 +284,23 @@ def save_cache(path, cache):
         json.dump(cache, handle, indent=1, sort_keys=True)
 
 
+def prune_store(store, used_keys):
+    removed = 0
+    if not os.path.isdir(store):
+        return removed
+    for prefix in os.listdir(store):
+        prefix_path = os.path.join(store, prefix)
+        if not os.path.isdir(prefix_path):
+            continue
+        for key in os.listdir(prefix_path):
+            if key not in used_keys:
+                shutil.rmtree(os.path.join(prefix_path, key), ignore_errors=True)
+                removed += 1
+        if not os.listdir(prefix_path):
+            os.rmdir(prefix_path)
+    return removed
+
+
 def human(size):
     for unit in ("B", "KB", "MB", "GB"):
         if abs(size) < 1024:
@@ -259,6 +323,8 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Only report what would be saved")
     parser.add_argument("--no-cache", action="store_true", help="Ignore the cache of already optimized files")
     parser.add_argument("--cache", default=CACHE_NAME, help="Cache file path")
+    parser.add_argument("--store", help="Folder that keeps optimized results keyed by the original file, used to skip work between builds")
+    parser.add_argument("--prune", action="store_true", help="Remove results from --store that were not used in this run")
     options = parser.parse_args()
 
     if options.oxipng and shutil.which("oxipng") is None:
@@ -267,7 +333,7 @@ def main():
 
     files = collect(options.paths, options.exclude)
     cache = {} if options.no_cache else load_cache(options.cache)
-    settings = f"{options.trim}:{options.quantize}:{options.colors}:{options.min_psnr}:{options.oxipng}"
+    settings = settings_of(options)
 
     pending = []
     for path in files:
@@ -283,13 +349,15 @@ def main():
     total_after = 0
     changed = 0
     failed = 0
+    reused = 0
+    used_keys = set()
 
     with ProcessPoolExecutor(max_workers=max(1, options.jobs)) as pool:
         jobs = {pool.submit(optimize, path, options): path for path in pending}
         for index, job in enumerate(as_completed(jobs), 1):
             path = jobs[job]
             try:
-                _, before, after, modified = job.result()
+                _, before, after, modified, key, from_store = job.result()
             except Exception as error:
                 failed += 1
                 print(f"[{index}/{len(pending)}] failed {path}: {error}")
@@ -297,7 +365,11 @@ def main():
 
             total_before += before
             total_after += after
-            if modified:
+            if key is not None:
+                used_keys.add(key)
+            if from_store:
+                reused += 1
+            elif modified:
                 changed += 1
                 print(f"[{index}/{len(pending)}] {path} {human(before)} -> {human(after)}")
 
@@ -307,9 +379,14 @@ def main():
     if not options.dry_run and not options.no_cache:
         save_cache(options.cache, cache)
 
+    if options.store and options.prune and not options.dry_run and failed == 0:
+        removed = prune_store(options.store, used_keys)
+        if removed:
+            print(f"Removed {removed} unused results from the store")
+
     saved = total_before - total_after
     percent = (saved / total_before * 100) if total_before else 0
-    print(f"Done: {changed} optimized, {failed} failed, saved {human(saved)} ({percent:.1f}%)")
+    print(f"Done: {changed} optimized, {reused} restored from the store, {failed} failed, saved {human(saved)} ({percent:.1f}%)")
 
 
 if __name__ == "__main__":
