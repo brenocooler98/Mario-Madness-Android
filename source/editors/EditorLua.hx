@@ -51,7 +51,7 @@ class EditorLua {
 		//trace('Lua version: ' + Lua.version());
 		//trace("LuaJIT version: " + Lua.versionJIT());
 
-		var result:Dynamic = #if (sys && !mobile) LuaL.dofile(lua, script); #else (sys.FileSystem.exists(script) ? LuaL.dofile(lua, script) : LuaL.dostring(lua, openfl.utils.Assets.getText(script))); #end
+		var result:Dynamic = #if (sys && !mobile) LuaL.dofile(lua, script); #else (sys.FileSystem.exists(script) ? LuaL.dofile(lua, script) : LuaL.dostring(lua, FunkinLua.readLuaAsset(script))); #end
 		var resultType:Int = result != 0 ? Lua.type(lua, -1) : 0;
 		var resultStr:String = (resultType == Lua.LUA_TSTRING || resultType == Lua.LUA_TNUMBER) ? Lua.tostring(lua, -1) : (result != 0 ? "Unknown Lua error (status " + result + ")" : null);
 		if (result != 0) {
@@ -268,4 +268,5 @@ class EditorLua {
 		lua = null;
 		#end
 	}
+
 }

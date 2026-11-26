@@ -61,7 +61,7 @@ class FunkinLua
 		// trace('Lua version: ' + Lua.version());
 		// trace("LuaJIT version: " + Lua.versionJIT());
 
-		var result:Dynamic = #if (sys && !mobile) LuaL.dofile(lua, script); #else (sys.FileSystem.exists(script) ? LuaL.dofile(lua, script) : LuaL.dostring(lua, openfl.utils.Assets.getText(script))); #end
+		var result:Dynamic = #if (sys && !mobile) LuaL.dofile(lua, script); #else (sys.FileSystem.exists(script) ? LuaL.dofile(lua, script) : LuaL.dostring(lua, FunkinLua.readLuaAsset(script))); #end
 		luaMark('script loaded with status ' + result);
 		var resultType:Int = result != 0 ? Lua.type(lua, -1) : 0;
 		var resultStr:String = (resultType == Lua.LUA_TSTRING || resultType == Lua.LUA_TNUMBER) ? Lua.tostring(lua, -1) : (result != 0 ? "Unknown Lua error (status " + result + ")" : null);
@@ -1618,6 +1618,12 @@ class FunkinLua
 	var markedEvents:Map<String, Bool> = new Map<String, Bool>();
 	#end
 
+	public static function readLuaAsset(path:String):String
+	{
+		var text:String = openfl.utils.Assets.exists(path, TEXT) ? openfl.utils.Assets.getText(path) : null;
+		return text != null ? text : '';
+	}
+
 	inline function luaMark(text:String):Void
 	{
 		#if android
@@ -1763,4 +1769,5 @@ class DebugLuaText extends FlxText
 		else if (disableTime < 1)
 			alpha = disableTime;
 	}
+
 }
