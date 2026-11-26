@@ -12,6 +12,16 @@ class MobileWindow
 {
 	public static var width(default, null):Int = 1280;
 	public static var height(default, null):Int = 720;
+	public static var displayWidth(default, null):Int = 1920;
+	public static var displayHeight(default, null):Int = 1080;
+	public static var x(default, null):Int = 320;
+	public static var y(default, null):Int = 180;
+
+	static var offsetX:Float = 0;
+	static var offsetY:Float = 0;
+	static var sentOffsetX:Float = 0;
+	static var sentOffsetY:Float = 0;
+	static var offsetSent:Bool = false;
 
 	static var target:DisplayObject;
 	static var masks:Shape;
@@ -39,6 +49,7 @@ class MobileWindow
 		Lib.current.stage.addChild(masks);
 		FlxG.signals.preDraw.add(apply);
 		FlxG.signals.gameResized.add(function(_, _) apply());
+		FlxG.signals.preStateSwitch.add(center);
 		apply();
 	}
 
@@ -46,8 +57,26 @@ class MobileWindow
 	{
 		if (width <= 0 || height <= 0)
 			return;
+		var centerX:Float = MobileWindow.x + MobileWindow.width / 2;
+		var centerY:Float = MobileWindow.y + MobileWindow.height / 2;
 		MobileWindow.width = width;
 		MobileWindow.height = height;
+		MobileWindow.x = Math.round(centerX - width / 2);
+		MobileWindow.y = Math.round(centerY - height / 2);
+		apply();
+	}
+
+	public static function move(x:Int, y:Int):Void
+	{
+		MobileWindow.x = x;
+		MobileWindow.y = y;
+		apply();
+	}
+
+	public static function center():Void
+	{
+		x = Math.round((displayWidth - width) / 2);
+		y = Math.round((displayHeight - height) / 2);
 		apply();
 	}
 
@@ -61,6 +90,7 @@ class MobileWindow
 	public static function reset():Void
 	{
 		resize(1280, 720);
+		center();
 	}
 
 	static function apply():Void
@@ -100,6 +130,7 @@ class MobileWindow
 			extra = Math.max(0, Math.ceil(-edge.x));
 		}
 		updateOverscan(wide ? extra : 0);
+		updateOffset(zoom);
 
 		if (wide && extra > 0)
 		{
@@ -117,6 +148,23 @@ class MobileWindow
 			viewHeight = height * zoom;
 			drawMasks(stageWidth, stageHeight, cornerX, cornerY, width * zoom, height * zoom);
 		}
+	}
+
+	static function updateOffset(zoom:Float):Void
+	{
+		offsetX = Math.round((x - (displayWidth - width) / 2) * zoom);
+		offsetY = Math.round((y - (displayHeight - height) / 2) * zoom);
+
+		var origin:Point = FlxG.game.globalToLocal(new Point(0, 0));
+		var moved:Point = FlxG.game.globalToLocal(new Point(offsetX, offsetY));
+		MobileControls.shiftCameras(origin.x - moved.x, origin.y - moved.y);
+
+		if (offsetSent && offsetX == sentOffsetX && offsetY == sentOffsetY)
+			return;
+		offsetSent = true;
+		sentOffsetX = offsetX;
+		sentOffsetY = offsetY;
+		WindowMover.setOffset(offsetX, offsetY);
 	}
 
 	static function updateOverscan(extra:Float):Void

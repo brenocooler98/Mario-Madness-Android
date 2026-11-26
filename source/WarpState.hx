@@ -104,8 +104,8 @@ class WarpState extends MusicBeatState
 			Lib.current.scaleX = 1;
 			Lib.current.scaleY = 1;
 			if(PlayState.ogwinX == 0){
-				PlayState.ogwinX = Lib.application.window.x;
-				PlayState.ogwinY = Lib.application.window.y;
+				PlayState.ogwinX = CoolUtil.windowX;
+				PlayState.ogwinY = CoolUtil.windowY;
 				}
 			var win = Lib.application.window;
 			#if desktop

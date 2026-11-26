@@ -812,8 +812,8 @@ class PlayState extends MusicBeatState
 		if (FlxG.sound.music != null)
 			FlxG.sound.music.stop();
 
-		winx = Lib.application.window.x;
-		winy = Lib.application.window.y;
+		winx = CoolUtil.windowX;
+		winy = CoolUtil.windowY;
 		changex = winx;
 		changey = winy;
 
@@ -889,8 +889,8 @@ class PlayState extends MusicBeatState
 			Lib.application.window.resizable = false;
 			#end
 			if(ogwinX == 0){
-				ogwinX = Lib.application.window.x;
-				ogwinY = Lib.application.window.y;
+				ogwinX = CoolUtil.windowX;
+				ogwinY = CoolUtil.windowY;
 			}
 			var win = Lib.application.window; // just to make this following line shorter
 			#if desktop
@@ -2386,6 +2386,10 @@ class PlayState extends MusicBeatState
 				#end
 				fsX = CoolUtil.windowWidth;
 				fsY = CoolUtil.windowHeight;
+				#if mobile
+				fsX = mobile.MobileWindow.displayWidth;
+				fsY = mobile.MobileWindow.displayHeight;
+				#end
 				#if desktop
 				Lib.application.window.fullscreen = false;
 				Lib.application.window.maximized = false;
@@ -2395,13 +2399,13 @@ class PlayState extends MusicBeatState
 				ogwinsizeX = CoolUtil.windowWidth;
 				ogwinsizeY = CoolUtil.windowHeight;
 
-				ogwinX = Lib.application.window.x;
-				ogwinY = Lib.application.window.y;
+				ogwinX = CoolUtil.windowX;
+				ogwinY = CoolUtil.windowY;
 
 				PauseSubState.restsizeX = CoolUtil.windowWidth;
 				PauseSubState.restsizeY = CoolUtil.windowHeight;
-				PauseSubState.restX = Lib.application.window.x;
-				PauseSubState.restY = Lib.application.window.y;
+				PauseSubState.restX = CoolUtil.windowX;
+				PauseSubState.restY = CoolUtil.windowY;
 
 				effect = new SMWPixelBlurShader();
 				dupe = new CamDupeShader();
@@ -5893,7 +5897,7 @@ class PlayState extends MusicBeatState
 		#if android
 		mobile.SessionLog.mark('adding touch controls');
 		#end
-		addHitbox(curStage == 'turmoilsweep' || curStage == 'castlestar', ClientPrefs.dodgeOnTop);
+		addHitbox(['no hope', 'last course', 'powerdown'].contains(SONG.song.toLowerCase()), ClientPrefs.dodgeOnTop);
 		addPauseButton();
 
 		callOnLuas('onCreatePost', []);
@@ -7606,16 +7610,12 @@ class PlayState extends MusicBeatState
 
 		if (startwindow)
 		{
-			#if desktop
-			Lib.application.window.move(winx, winy);
-			#end
+			CoolUtil.moveWindow(winx, winy);
 		}
 		else if (startresize)
 		{
 			CoolUtil.resizeWindow(resizex, resizey);
-			#if desktop
-			Lib.application.window.move(winx, winy);
-			#end
+			CoolUtil.moveWindow(winx, winy);
 		}
 
 		if (PlayState.SONG.song == 'Oh God No')
@@ -13664,9 +13664,7 @@ class PlayState extends MusicBeatState
 								{
 									startresize = false;
 									CoolUtil.resizeWindow(resizex, resizey);
-									#if desktop
-									Lib.application.window.move(winx, winy);
-									#end
+									CoolUtil.moveWindow(winx, winy);
 								}
 							}));
 							virtuabg.alpha = 0;
@@ -15757,16 +15755,14 @@ class PlayState extends MusicBeatState
 			if (CoolUtil.windowWidth == 800 && CoolUtil.windowHeight == 600)
 			{
 				#if desktop
-				Lib.application.window.move(Lib.application.window.x - 240, Lib.application.window.y - 60);
+				Lib.application.window.move(CoolUtil.windowX - 240, CoolUtil.windowY - 60);
 				#end
 				CoolUtil.resizeWindow(1280, 720);
 			}
 			else if (PlayState.curStage == 'piracy')
 			{
 				CoolUtil.resizeWindow(1280, 720);
-				#if desktop
-				Lib.application.window.move(PlayState.ogwinX, PlayState.ogwinY);
-				#end
+				CoolUtil.moveWindow(PlayState.ogwinX, PlayState.ogwinY);
 			}
 			if (PlayState.curStage == 'somari')
 			{
@@ -15786,9 +15782,7 @@ class PlayState extends MusicBeatState
 				#end
 
 				CoolUtil.resizeWindow(PauseSubState.restsizeX, PauseSubState.restsizeY);
-				#if desktop
-				Lib.application.window.move(PauseSubState.restX, PauseSubState.restY);
-				#end
+				CoolUtil.moveWindow(PauseSubState.restX, PauseSubState.restY);
 				CppAPI.restoreWindows();
 				CppAPI.setWallpaper('old');
 			}
@@ -15936,9 +15930,7 @@ class PlayState extends MusicBeatState
 							Lib.application.window.borderless = false;
 							#end
 							CoolUtil.resizeWindow(fsX, fsY);
-							#if desktop
-							Lib.application.window.move(0, 0);
-							#end
+							CoolUtil.moveWindow(0, 0);
 						}
 					}));
 			}

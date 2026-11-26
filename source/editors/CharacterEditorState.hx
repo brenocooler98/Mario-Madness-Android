@@ -92,7 +92,7 @@ class CharacterEditorState extends MusicBeatState
 
 			if(CoolUtil.windowWidth == 800 && CoolUtil.windowHeight == 600){
 				#if desktop
-				Lib.application.window.move(Lib.application.window.x - 240, Lib.application.window.y - 60);
+				Lib.application.window.move(CoolUtil.windowX - 240, CoolUtil.windowY - 60);
 				#end
 				CoolUtil.resizeWindow(1280, 720);
 			}

@@ -595,8 +595,8 @@ class FreeplaySubState extends MusicBeatSubstate
 		FlxG.sound.play(Paths.sound('FREEPLAY_START'), 1);
 		quieto = true;
 		tween.cancel();
-		PlayState.ogwinX = Lib.application.window.x;
-		PlayState.ogwinY = Lib.application.window.y;
+		PlayState.ogwinX = CoolUtil.windowX;
+		PlayState.ogwinY = CoolUtil.windowY;
 
 		#if FREEPLAY
 		PlayState.cpuControlled = !PlayState.cpuControlled;

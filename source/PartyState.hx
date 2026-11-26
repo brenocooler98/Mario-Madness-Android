@@ -130,8 +130,8 @@ class PartyState extends MusicBeatState
 		
 		Lib.current.scaleX = 2.5;
 		Lib.current.scaleY = 2.5;
-		PlayState.ogwinX = Lib.application.window.x;
-		PlayState.ogwinY = Lib.application.window.y;
+		PlayState.ogwinX = CoolUtil.windowX;
+		PlayState.ogwinY = CoolUtil.windowY;
 		var win = Lib.application.window;
 		#if desktop
 		win.move(win.x + Std.int((CoolUtil.windowWidth - 512) / 2), win.y + Std.int((CoolUtil.windowHeight - 768) / 2));

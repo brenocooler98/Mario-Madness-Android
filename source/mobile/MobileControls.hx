@@ -12,6 +12,9 @@ class MobileControls
 	static inline var MARGIN:Int = 20;
 
 	static var mobileCameras:Array<FlxCamera> = [];
+	static var cameraBases:Map<FlxCamera, Array<Float>> = new Map<FlxCamera, Array<Float>>();
+	static var shiftX:Float = 0;
+	static var shiftY:Float = 0;
 
 	public static function isMobileCamera(camera:FlxCamera):Bool
 	{
@@ -26,14 +29,34 @@ class MobileControls
 		camera.bgColor = FlxColor.TRANSPARENT;
 		FlxG.cameras.add(camera, false);
 		mobileCameras.push(camera);
+		cameraBases.set(camera, [camera.x, camera.y]);
+		camera.x += shiftX;
+		camera.y += shiftY;
 		return camera;
 	}
 
 	public static function destroyCamera(camera:FlxCamera):Void
 	{
 		mobileCameras.remove(camera);
+		cameraBases.remove(camera);
 		if (camera != null && FlxG.cameras.list.contains(camera))
 			FlxG.cameras.remove(camera);
+	}
+
+	public static function shiftCameras(x:Float, y:Float):Void
+	{
+		if (x == shiftX && y == shiftY)
+			return;
+		shiftX = x;
+		shiftY = y;
+		for (camera in mobileCameras)
+		{
+			var base:Array<Float> = cameraBases.get(camera);
+			if (camera == null || base == null)
+				continue;
+			camera.x = base[0] + x;
+			camera.y = base[1] + y;
+		}
 	}
 
 	public static function createBackButton(owner:FlxState, camera:FlxCamera):MobileButton

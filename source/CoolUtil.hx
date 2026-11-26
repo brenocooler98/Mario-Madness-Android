@@ -166,9 +166,41 @@ class CoolUtil {
 	}
 
 	public static inline function centerWindowOnPoint(?point:FlxPoint) {
-		#if desktop
+		#if mobile
+		mobile.MobileWindow.move(Std.int(point.x - (windowWidth / 2)), Std.int(point.y - (windowHeight / 2)));
+		#elseif desktop
 		Lib.application.window.x = Std.int(point.x - (Lib.application.window.width / 2));
 		Lib.application.window.y = Std.int(point.y - (Lib.application.window.height / 2));
+		#end
+	}
+
+	public static var windowX(get, never):Int;
+	public static var windowY(get, never):Int;
+
+	static function get_windowX():Int
+	{
+		#if mobile
+		return mobile.MobileWindow.x;
+		#else
+		return Lib.application.window.x;
+		#end
+	}
+
+	static function get_windowY():Int
+	{
+		#if mobile
+		return mobile.MobileWindow.y;
+		#else
+		return Lib.application.window.y;
+		#end
+	}
+
+	public static function moveWindow(x:Int, y:Int):Void
+	{
+		#if mobile
+		mobile.MobileWindow.move(x, y);
+		#elseif desktop
+		Lib.application.window.move(x, y);
 		#end
 	}
 
@@ -204,8 +236,8 @@ class CoolUtil {
 
 	public static inline function getCenterWindowPoint():FlxPoint {
 		return FlxPoint.get(
-			Lib.application.window.x + (Lib.application.window.width / 2),
-			Lib.application.window.y + (Lib.application.window.height / 2)
+			windowX + (windowWidth / 2),
+			windowY + (windowHeight / 2)
 		);
 	}
 }

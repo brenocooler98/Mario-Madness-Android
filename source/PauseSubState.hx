@@ -563,9 +563,7 @@ class PauseSubState extends MusicBeatSubstate
 							Lib.application.window.maximized = false;
 							#end
 							CoolUtil.resizeWindow(restsizeX, restsizeY);
-							#if desktop
-							Lib.application.window.move(restX, restY);
-							#end
+							CoolUtil.moveWindow(restX, restY);
 							CppAPI.setWallpaper('old');
 						}
 
