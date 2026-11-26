@@ -21,6 +21,7 @@ class RippleShader extends FlxShader
         uniform float warpIntensity;*/
         uniform float max_po;
         uniform float iTime;
+        uniform float turbOctaves;
 
         vec3 mod289(vec3 x) {
             return x - floor(x * (1.0 / 289.0)) * 289.0;
@@ -124,13 +125,14 @@ class RippleShader extends FlxShader
             float result = 0.0;
             float totalAmplitude = 0.0;
             
-            for (int o = 0; o != octaves; ++o)
+            float amplitude = 1.0;
+            float fade = pow(lacunarity, -smoothness);
+            for (int o = 0; o < octaves; ++o)
             {
-                float amplitude = pow(lacunarity, -smoothness * float(o));
-                
                 result += snoise(coords) * amplitude;
                 totalAmplitude += amplitude;
-                
+
+                amplitude *= fade;
                 coords *= lacunarity;
             }
             
@@ -144,12 +146,15 @@ class RippleShader extends FlxShader
             
             float t = 0.0;
             
-            for (int o = 0; o != octaves; ++o)
+            float f = f_low;
+            for (int o = 0; o < octaves; ++o)
             {
-                float f = f_low * pow(2.0, float(o));
-                
+                if (float(o) >= turbOctaves)
+                    break;
+
                 t += abs(snoise(coords)) / f;
-                
+
+                f *= 2.0;
                 coords *= 2.0;
             }
             
@@ -201,5 +206,6 @@ class RippleShader extends FlxShader
         super();
         this.max_po.value = [10.0];
         this.iTime.value = [0.0];
+        this.turbOctaves.value = [#if mobile 3.0 #else 8.0 #end];
     }
 }

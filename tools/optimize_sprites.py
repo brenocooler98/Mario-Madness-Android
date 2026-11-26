@@ -23,7 +23,7 @@ try:
 except ImportError:
     oxipng = None
 
-VERSION = "4"
+VERSION = "5"
 CACHE_NAME = ".sprite_cache.json"
 SUBTEXTURE = re.compile(r"<SubTexture\b[^>]*>")
 NUMBER = r'(\b{}\s*=\s*")(-?\d+(?:\.\d+)?)(")'
@@ -670,7 +670,70 @@ def optimize_audio(path, options):
             os.remove(temp_path)
 
 
+def probe_video(path):
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height,bit_rate:format=bit_rate", "-of", "json", path],
+        capture_output=True, text=True, check=True,
+    )
+    data = json.loads(result.stdout)
+    video = None
+    audio = None
+    for stream in data.get("streams") or []:
+        if stream.get("codec_type") == "video" and video is None:
+            video = stream
+        elif stream.get("codec_type") == "audio" and audio is None:
+            audio = stream
+    fmt = data.get("format") or {}
+    return video, audio, int(float(fmt.get("bit_rate") or 0)) // 1000
+
+
+def optimize_video(path, options):
+    before = os.path.getsize(path)
+    video, audio, total = probe_video(path)
+    if video is None:
+        return before, False, ""
+
+    width = int(video.get("width") or 0)
+    height = int(video.get("height") or 0)
+    bitrate = int(float(video.get("bit_rate") or 0)) // 1000 or total
+    pixels = max(1, width * height)
+    budget = options.video_bitrate * pixels / (1280 * 720)
+    too_big = width > options.video_width or height > options.video_height
+    if not too_big and bitrate and bitrate <= budget * 1.2:
+        return before, False, ""
+
+    handle, temp_path = tempfile.mkstemp(suffix=".mp4", dir=os.path.dirname(path))
+    os.close(handle)
+    try:
+        command = [
+            "ffmpeg", "-v", "error", "-y", "-i", path, "-map", "0:v:0", "-map", "0:a:0?", "-map_metadata", "-1",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", str(options.video_crf), "-pix_fmt", "yuv420p",
+            "-maxrate", f"{int(budget * 1.5)}k", "-bufsize", f"{int(budget * 3)}k",
+            "-vf", f"scale='min({options.video_width},iw)':'min({options.video_height},ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
+            "-movflags", "+faststart",
+        ]
+        audio_rate = int(float(audio.get("bit_rate") or 0)) // 1000 if audio else 0
+        if audio is not None and audio.get("codec_name") == "aac" and 0 < audio_rate <= 192:
+            command += ["-c:a", "copy"]
+        elif audio is not None:
+            command += ["-c:a", "aac", "-b:a", "160k"]
+        subprocess.run(command + [temp_path], check=True)
+        after = os.path.getsize(temp_path)
+        if after >= before * 0.9:
+            return before, False, ""
+        note = f"{width}x{height} {bitrate}k"
+        if options.dry_run:
+            return after, True, note
+        os.replace(temp_path, path)
+        return after, True, note
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
 def kind_settings(kind, options):
+    if kind == "video":
+        return f"video:{VERSION}:{options.video_crf}:{options.video_bitrate}:{options.video_width}x{options.video_height}"
     if kind == "audio":
         return f"audio:{VERSION}:{options.audio_quality}:{options.audio_mono}"
     if kind == "json":
@@ -679,6 +742,8 @@ def kind_settings(kind, options):
 
 
 def optimize_job(kind, path, options, grid):
+    if kind == "video":
+        return run_single(kind, path, options, optimize_video)
     if kind == "audio":
         return run_single(kind, path, options, optimize_audio)
     if kind == "json":
@@ -815,6 +880,11 @@ def main():
     parser.add_argument("--audio-quality", type=int, default=6, help="Vorbis quality used by --audio, from 3 to 8")
     parser.add_argument("--no-audio-mono", dest="audio_mono", action="store_false", help="Keep stereo files whose channels are identical")
     parser.add_argument("--json", action="store_true", help="Minify JSON data files")
+    parser.add_argument("--video", action="store_true", help="Re-encode MP4 videos that are bigger or heavier than needed")
+    parser.add_argument("--video-crf", type=int, default=23, help="H.264 quality used by --video, lower is better")
+    parser.add_argument("--video-bitrate", type=int, default=2500, help="Video bitrate in kbps that a 1280x720 video may use before it is re-encoded")
+    parser.add_argument("--video-width", type=int, default=1280, help="Biggest video width kept by --video")
+    parser.add_argument("--video-height", type=int, default=720, help="Biggest video height kept by --video")
     parser.add_argument("--verbose", action="store_true", help="Print every optimized file")
     options = parser.parse_args()
 
@@ -836,6 +906,11 @@ def main():
             work += [("audio", path) for path in collect_extension(options.paths, options.exclude, ".ogg")]
         else:
             print("ffmpeg was not found, skipping audio")
+    if options.video:
+        if shutil.which("ffmpeg") and shutil.which("ffprobe"):
+            work += [("video", path) for path in collect_extension(options.paths, options.exclude, ".mp4")]
+        else:
+            print("ffmpeg was not found, skipping videos")
     if options.json:
         manifest = os.path.abspath(options.scale_manifest) if options.scale_manifest else None
         work += [("json", path) for path in collect_extension(options.paths, options.exclude, ".json") if os.path.abspath(path) != manifest]
