@@ -81,7 +81,7 @@ class MobileInput
 	public static function isBlocked(touch:FlxTouch, ?except:FlxSprite):Bool
 	{
 		for (blocker in blockers)
-			if (blocker != except && blocker.exists && blocker.visible && blocker.alpha > 0 && touch.overlaps(blocker, blocker.getCameras()[0]))
+			if (blocker != except && blocker.exists && blocker.visible && touch.overlaps(blocker, blocker.getCameras()[0]))
 				return true;
 		return false;
 	}

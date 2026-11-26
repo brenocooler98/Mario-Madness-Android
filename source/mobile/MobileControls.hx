@@ -50,6 +50,8 @@ class MobileControls
 		var button:MobileButton = new MobileButton('pauseButton', 'pause', PAUSE, 0.9);
 		button.owner = owner;
 		button.setPosition(camera.width - button.width - MARGIN, MARGIN);
+		if (ClientPrefs.invisiblePauseButton)
+			button.alpha = 0;
 				button.cameras = [camera];
 		return button;
 	}

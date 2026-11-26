@@ -31,7 +31,7 @@ class Hitbox extends FlxTypedGroup<TouchButton>
 	{
 		super();
 		this.owner = owner;
-		lanesInvisible = invisible || ClientPrefs.hitboxAlpha <= 0;
+		lanesInvisible = invisible || ClientPrefs.invisibleHitbox || ClientPrefs.hitboxAlpha <= 0;
 
 		var laneWidth:Int = Std.int(areaWidth / 4);
 		var laneY:Float = Math.max(laneTop, withDodge && dodgeOnTop ? DODGE_HEIGHT : 0);
@@ -58,8 +58,8 @@ class Hitbox extends FlxTypedGroup<TouchButton>
 		{
 			buttonDodge = new TouchButton(0, dodgeOnTop ? 0 : areaHeight - DODGE_HEIGHT, areaWidth, DODGE_HEIGHT, 0xFFFFFF00, DODGE, NONE, false);
 			buttonDodge.owner = owner;
-			buttonDodge.idleAlpha = lanesInvisible ? 0 : ClientPrefs.hitboxAlpha * 0.35;
-			buttonDodge.pressedAlpha = lanesInvisible ? 0 : Math.min(1, ClientPrefs.hitboxAlpha * 1.5);
+			buttonDodge.idleAlpha = ClientPrefs.invisibleHitbox ? 0 : 0.25;
+			buttonDodge.pressedAlpha = ClientPrefs.invisibleHitbox ? 0 : 0.6;
 			add(buttonDodge);
 		}
 	}

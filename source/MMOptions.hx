@@ -36,7 +36,7 @@ import Discord.DiscordClient;
 // Yeah seems like a reasonable goal to me
 class MMOptions extends MusicBeatSubstate
 {
-	var options:Array<String> = ['Notes', #if !mobile 'Controls', #end 'Preferences', 'Mario Options', 'Delete Data'];
+	var options:Array<String> = [#if mobile 'Mobile Options', #end 'Notes', #if !mobile 'Controls', #end 'Preferences', 'Mario Options', 'Delete Data'];
 	private var grpOptions:FlxTypedGroup<FlxText>;
 
 	private static var curSelected:Int = 0;
@@ -140,6 +140,10 @@ class MMOptions extends MusicBeatSubstate
 
 			switch (options[curSelected])
 			{
+				#if mobile
+				case 'Mobile Options':
+					openSubState(new MobileOptionsSubstate());
+				#end
 				case 'Notes':
 					openSubState(new NotesSubstate());
 
@@ -841,7 +845,7 @@ class PreferencesSubstate extends MusicBeatSubstate
 {
 	private static var curSelected:Int = 0;
 	static var unselectableOptions:Array<String> = ['GRAPHICS', 'GAMEPLAY'];
-	static var noCheckbox:Array<String> = ['Framerate', 'Note Delay', 'Hitbox Opacity'];
+	static var noCheckbox:Array<String> = ['Framerate', 'Note Delay'];
 
 	static var options:Array<String> = [
 		'GRAPHICS',
@@ -862,7 +866,6 @@ class PreferencesSubstate extends MusicBeatSubstate
 		'Flashing Lights',
 		'Camera Zooms',
 		'FPS Counter'
-		#if mobile, 'Hitbox Opacity' #end
 	];
 
 	private var grpOptions:FlxTypedGroup<Alphabet>;
@@ -1123,8 +1126,6 @@ class PreferencesSubstate extends MusicBeatSubstate
 								ClientPrefs.noteOffset = 0;
 							else if (ClientPrefs.noteOffset > 500)
 								ClientPrefs.noteOffset = 500;
-						case 'Hitbox Opacity':
-							ClientPrefs.hitboxAlpha = Math.round(Math.max(0, Math.min(1, ClientPrefs.hitboxAlpha + add * 0.05)) * 100) / 100;
 					}
 				reloadValues();
 
@@ -1199,8 +1200,6 @@ class PreferencesSubstate extends MusicBeatSubstate
 				daText = "If checked, hides most HUD elements.";
 			case 'Hide Song Length':
 				daText = "If checked, the bar showing how much time is left\nwill be hidden.";
-			case 'Hitbox Opacity':
-				daText = "How visible the touch lanes are when pressed.\nSet it to 0% to hide them.";
 		}
 		descText.text = daText;
 
@@ -1302,8 +1301,6 @@ class PreferencesSubstate extends MusicBeatSubstate
 						daText = '' + ClientPrefs.framerate;
 					case 'Note Delay':
 						daText = ClientPrefs.noteOffset + 'ms';
-					case 'Hitbox Opacity':
-						daText = Math.round(ClientPrefs.hitboxAlpha * 100) + '%';
 				}
 				var lastTracker:FlxSprite = text.sprTracker;
 				text.sprTracker = null;
@@ -1784,3 +1781,315 @@ class DeleteSubstate extends MusicBeatSubstate
 			}
 		}
 }
+
+#if mobile
+class MobileOptionsSubstate extends MusicBeatSubstate
+{
+	private static var curSelected:Int = 1;
+
+	static var unselectableOptions:Array<String> = ['MOBILE'];
+	static var noCheckbox:Array<String> = ['Hitbox Opacity', 'Dodge Button', 'Unlock All'];
+
+	static var options:Array<String> = [
+		'MOBILE',
+		'Invisible Hitbox',
+		'Hitbox Opacity',
+		'Invisible Pause Button',
+		'Dodge Button',
+		'Unlock All'
+	];
+
+	private var grpOptions:FlxTypedGroup<Alphabet>;
+	private var checkboxArray:Array<CheckboxThingie> = [];
+	private var checkboxNumber:Array<Int> = [];
+	private var grpTexts:FlxTypedGroup<AttachedText>;
+	private var textNumber:Array<Int> = [];
+	private var descText:FlxText;
+
+	var nextAccept:Int = 5;
+	var holdTime:Float = 0;
+	var unlockConfirm:Bool = false;
+
+	public function new()
+	{
+		super();
+
+		grpOptions = new FlxTypedGroup<Alphabet>();
+		add(grpOptions);
+
+		grpTexts = new FlxTypedGroup<AttachedText>();
+		add(grpTexts);
+
+		for (i in 0...options.length)
+		{
+			var isCentered:Bool = unselectableCheck(i);
+			var optionText:Alphabet = new Alphabet(0, 70 * i, options[i], false, false);
+			optionText.isMenuItem = true;
+			if (isCentered)
+			{
+				optionText.screenCenter(X);
+				optionText.forceX = optionText.x;
+			}
+			else
+			{
+				optionText.x += 300;
+				optionText.forceX = 300;
+			}
+			optionText.yMult = 90;
+			optionText.targetY = i;
+			grpOptions.add(optionText);
+
+			if (!isCentered)
+			{
+				if (noCheckbox.contains(options[i]))
+				{
+					var valueText:AttachedText = new AttachedText('0', optionText.width + 80);
+					valueText.sprTracker = optionText;
+					grpTexts.add(valueText);
+					textNumber.push(i);
+				}
+				else
+				{
+					var checkbox:CheckboxThingie = new CheckboxThingie(optionText.x - 105, optionText.y, false);
+					checkbox.sprTracker = optionText;
+					checkboxArray.push(checkbox);
+					checkboxNumber.push(i);
+					add(checkbox);
+				}
+			}
+		}
+
+		descText = new FlxText(50, 600, 1180, "", 32);
+		descText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		descText.scrollFactor.set();
+		descText.borderSize = 2.4;
+		add(descText);
+
+		if (unselectableCheck(curSelected))
+			curSelected = 1;
+		changeSelection();
+		reloadValues();
+
+		enableTouchMenu();
+		addBackButton();
+		addTouchArrows();
+		updateTouchArrows();
+	}
+
+	function updateTouchArrows():Void
+	{
+		var option:String = options[curSelected];
+		setTouchArrowsVisible(option == 'Hitbox Opacity' || option == 'Dodge Button');
+	}
+
+	override function update(elapsed:Float)
+	{
+		if (controls.UI_UP_P)
+			changeSelection(-1);
+		if (controls.UI_DOWN_P)
+			changeSelection(1);
+
+		touchList(grpOptions.members, curSelected, changeSelection);
+
+		if (controls.BACK)
+		{
+			grpOptions.forEachAlive(function(spr:Alphabet) spr.alpha = 0);
+			grpTexts.forEachAlive(function(spr:AttachedText) spr.alpha = 0);
+			for (checkbox in checkboxArray)
+				checkbox.alpha = 0;
+			descText.alpha = 0;
+			ClientPrefs.saveSettings();
+			close();
+			FlxG.sound.play(Paths.sound('cancelMenu'));
+			super.update(elapsed);
+			return;
+		}
+
+		var option:String = options[curSelected];
+
+		if (controls.ACCEPT && nextAccept <= 0)
+		{
+			switch (option)
+			{
+				case 'Invisible Hitbox':
+					ClientPrefs.invisibleHitbox = !ClientPrefs.invisibleHitbox;
+				case 'Invisible Pause Button':
+					ClientPrefs.invisiblePauseButton = !ClientPrefs.invisiblePauseButton;
+				case 'Dodge Button':
+					ClientPrefs.dodgeOnTop = !ClientPrefs.dodgeOnTop;
+				case 'Unlock All':
+					if (unlockConfirm)
+					{
+						unlockAll();
+						unlockConfirm = false;
+						descText.text = "Everything was unlocked!";
+						FlxG.sound.play(Paths.sound('confirmMenu'));
+					}
+					else
+					{
+						unlockConfirm = true;
+						descText.text = "Tap it again to confirm.\nThis unlocks every world, song and secret.";
+					}
+			}
+			if (option != 'Unlock All')
+				FlxG.sound.play(Paths.sound('scrollMenu'));
+			ClientPrefs.saveSettings();
+			reloadValues();
+		}
+
+		if (option == 'Dodge Button' && (controls.UI_LEFT_P || controls.UI_RIGHT_P))
+		{
+			ClientPrefs.dodgeOnTop = !ClientPrefs.dodgeOnTop;
+			FlxG.sound.play(Paths.sound('scrollMenu'));
+			reloadValues();
+		}
+		else if (option == 'Hitbox Opacity')
+		{
+			if (controls.UI_LEFT || controls.UI_RIGHT)
+			{
+				if (holdTime > 0.5 || controls.UI_LEFT_P || controls.UI_RIGHT_P)
+				{
+					var add:Int = controls.UI_LEFT ? -1 : 1;
+					ClientPrefs.hitboxAlpha = Math.round(Math.max(0, Math.min(1, ClientPrefs.hitboxAlpha + add * 0.05)) * 100) / 100;
+					reloadValues();
+					if (holdTime <= 0)
+						FlxG.sound.play(Paths.sound('scrollMenu'));
+				}
+				holdTime += elapsed;
+			}
+			else
+				holdTime = 0;
+		}
+
+		if (nextAccept > 0)
+			nextAccept -= 1;
+
+		super.update(elapsed);
+	}
+
+	function unlockAll():Void
+	{
+		ClientPrefs.worlds = [3, 7, 5, 6, 3];
+		ClientPrefs.worldsALT = [0, 2, 0, 3, 0];
+		ClientPrefs.storySave = [for (i in 0...10) true];
+		ClientPrefs.storyPass = true;
+		ClientPrefs.iHYPass = true;
+		ClientPrefs.mXPass = true;
+		ClientPrefs.warioPass = true;
+		ClientPrefs.betaPass = true;
+		ClientPrefs.carPass = true;
+		ClientPrefs.finish1 = true;
+		ClientPrefs.saveSettings();
+	}
+
+	function changeSelection(change:Int = 0)
+	{
+		do
+		{
+			curSelected += change;
+			if (curSelected < 0)
+				curSelected = options.length - 1;
+			if (curSelected >= options.length)
+				curSelected = 0;
+		}
+		while (unselectableCheck(curSelected));
+
+		unlockConfirm = false;
+
+		descText.text = switch (options[curSelected])
+		{
+			case 'Invisible Hitbox': "If checked, the touch lanes and the dodge bar\nwill not light up when pressed.";
+			case 'Hitbox Opacity': "How visible the touch lanes are when pressed.";
+			case 'Invisible Pause Button': "If checked, the pause button is hidden\nbut it still works when tapped.";
+			case 'Dodge Button': "Where the yellow dodge bar shows up\non songs with the dodge mechanic.";
+			case 'Unlock All': "Unlocks every world, song and secret.";
+			default: "";
+		}
+
+		var bullShit:Int = 0;
+		for (item in grpOptions.members)
+		{
+			item.targetY = bullShit - curSelected;
+			bullShit++;
+
+			if (!unselectableCheck(bullShit - 1))
+			{
+				item.alpha = 0.4;
+				item.color = 0xFF680F0F;
+				if (item.targetY == 0)
+				{
+					item.alpha = 1;
+					item.color = 0xFFFF0000;
+				}
+
+				for (checkbox in checkboxArray)
+				{
+					if (checkbox.sprTracker == item)
+					{
+						checkbox.alpha = item.alpha;
+						break;
+					}
+				}
+			}
+		}
+
+		for (i in 0...grpTexts.members.length)
+		{
+			var text:AttachedText = grpTexts.members[i];
+			if (text != null)
+			{
+				text.alpha = 0.4;
+				text.color = 0xFF680F0F;
+				if (textNumber[i] == curSelected)
+				{
+					text.alpha = 1;
+					text.color = 0xFFFF0000;
+				}
+			}
+		}
+
+		updateTouchArrows();
+		FlxG.sound.play(Paths.sound('scrollMenu'));
+	}
+
+	function reloadValues()
+	{
+		for (i in 0...checkboxArray.length)
+		{
+			var checkbox:CheckboxThingie = checkboxArray[i];
+			if (checkbox != null)
+			{
+				checkbox.daValue = switch (options[checkboxNumber[i]])
+				{
+					case 'Invisible Hitbox': ClientPrefs.invisibleHitbox;
+					case 'Invisible Pause Button': ClientPrefs.invisiblePauseButton;
+					default: false;
+				}
+			}
+		}
+
+		for (i in 0...grpTexts.members.length)
+		{
+			var text:AttachedText = grpTexts.members[i];
+			if (text != null)
+			{
+				var daText:String = switch (options[textNumber[i]])
+				{
+					case 'Hitbox Opacity': Math.round(ClientPrefs.hitboxAlpha * 100) + '%';
+					case 'Dodge Button': ClientPrefs.dodgeOnTop ? 'Up' : 'Down';
+					default: '';
+				}
+				var lastTracker:FlxSprite = text.sprTracker;
+				text.sprTracker = null;
+				text.changeText(daText);
+				text.sprTracker = lastTracker;
+			}
+		}
+	}
+
+	private function unselectableCheck(num:Int):Bool
+	{
+		return unselectableOptions.contains(options[num]);
+	}
+}
+#end

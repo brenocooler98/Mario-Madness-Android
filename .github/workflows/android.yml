@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      optimize_sprites:
+        description: Optimize sprites before building
+        type: boolean
+        default: false
 
 concurrency:
   group: android-${{ github.ref }}
@@ -83,6 +88,12 @@ jobs:
 
       - name: List Haxelibs
         run: haxelib list
+
+      - name: Optimize Sprites
+        if: github.event_name == 'workflow_dispatch' && inputs.optimize_sprites
+        run: |
+          pip install --quiet pillow numpy
+          python3 tools/optimize_sprites.py assets --trim --no-cache
 
       - name: Configure Android
         run: |

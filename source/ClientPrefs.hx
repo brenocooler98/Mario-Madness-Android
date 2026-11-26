@@ -27,6 +27,9 @@ class ClientPrefs {
 	public static var hideTime:Bool = false;
 	public static var vramSprites:Bool = true;
 	public static var hitboxAlpha:Float = 0.3;
+	public static var invisibleHitbox:Bool = false;
+	public static var invisiblePauseButton:Bool = false;
+	public static var dodgeOnTop:Bool = false;
 
 	public static var filtro85:Bool = true;
 	public static var pauseStart:Bool = false;
@@ -138,6 +141,9 @@ class ClientPrefs {
 		FlxG.save.data.worldsALT = worldsALT;
 		FlxG.save.data.vramSprites = vramSprites;
 		FlxG.save.data.hitboxAlpha = hitboxAlpha;
+		FlxG.save.data.invisibleHitbox = invisibleHitbox;
+		FlxG.save.data.invisiblePauseButton = invisiblePauseButton;
+		FlxG.save.data.dodgeOnTop = dodgeOnTop;
 
 		FlxG.save.flush();
 
@@ -225,6 +231,15 @@ class ClientPrefs {
 		}
 		if (FlxG.save.data.storyPass != null) {
 			storyPass = FlxG.save.data.storyPass;
+		}
+		if (FlxG.save.data.invisibleHitbox != null) {
+			invisibleHitbox = FlxG.save.data.invisibleHitbox;
+		}
+		if (FlxG.save.data.invisiblePauseButton != null) {
+			invisiblePauseButton = FlxG.save.data.invisiblePauseButton;
+		}
+		if (FlxG.save.data.dodgeOnTop != null) {
+			dodgeOnTop = FlxG.save.data.dodgeOnTop;
 		}
 		if (FlxG.save.data.hitboxAlpha != null) {
 			hitboxAlpha = FlxG.save.data.hitboxAlpha;

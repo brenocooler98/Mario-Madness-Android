@@ -5881,7 +5881,7 @@ class PlayState extends MusicBeatState
 		DiscordClient.changePresence(detailsText, newName + legacycheck, discName.toLowerCase(), iconP2.getCharacter().toLowerCase());
 		#end
 
-		addHitbox(curStage == 'turmoilsweep' || curStage == 'castlestar');
+		addHitbox(curStage == 'turmoilsweep' || curStage == 'castlestar', ClientPrefs.dodgeOnTop);
 		addPauseButton();
 
 		callOnLuas('onCreatePost', []);
