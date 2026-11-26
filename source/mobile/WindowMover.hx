@@ -13,15 +13,15 @@ class WindowMover
 	static var clearImagesJNI:Dynamic = null;
 	#end
 
-	public static function setWindow(active:Bool, left:Int, top:Int, right:Int, bottom:Int):Void
+	public static function setWindow(active:Bool, left:Int, top:Int, right:Int, bottom:Int, offsetX:Float, offsetY:Float):Void
 	{
 		#if android
 		try
 		{
 			if (setWindowJNI == null)
-				setWindowJNI = JNI.createStaticMethod('mariomadness/WindowMover', 'setWindow', '(ZIIII)V');
+				setWindowJNI = JNI.createStaticMethod('mariomadness/WindowMover', 'setWindow', '(ZIIIIFF)V');
 			if (setWindowJNI != null)
-				setWindowJNI(active, left, top, right, bottom);
+				setWindowJNI(active, left, top, right, bottom, offsetX, offsetY);
 		}
 		catch (e:Dynamic) {}
 		#end

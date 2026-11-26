@@ -12,9 +12,7 @@ class MobileControls
 	static inline var MARGIN:Int = 20;
 
 	static var mobileCameras:Array<FlxCamera> = [];
-	static var cameraBases:Map<FlxCamera, Array<Float>> = new Map<FlxCamera, Array<Float>>();
-	static var shiftX:Float = 0;
-	static var shiftY:Float = 0;
+	static var camerasVisible:Bool = true;
 
 	public static function isMobileCamera(camera:FlxCamera):Bool
 	{
@@ -23,28 +21,21 @@ class MobileControls
 
 	public static function createCamera():FlxCamera
 	{
-		var rect:flixel.math.FlxRect = MobileWindow.getVisibleRect();
-		var camera:FlxCamera = new FlxCamera(Std.int(rect.x), Std.int(rect.y), Std.int(Math.max(1, rect.width)), Std.int(Math.max(1, rect.height)));
-		rect.put();
+		var camera:FlxCamera = new FlxCamera(0, 0, MobileWindow.controlsWidth, MobileWindow.controlsHeight);
 		camera.bgColor = FlxColor.TRANSPARENT;
 		FlxG.cameras.add(camera, false);
 		mobileCameras.push(camera);
-		cameraBases.set(camera, [camera.x, camera.y]);
 		camera.visible = camerasVisible;
-		camera.x += shiftX;
-		camera.y += shiftY;
+		layoutCamera(camera);
 		return camera;
 	}
 
 	public static function destroyCamera(camera:FlxCamera):Void
 	{
 		mobileCameras.remove(camera);
-		cameraBases.remove(camera);
 		if (camera != null && FlxG.cameras.list.contains(camera))
 			FlxG.cameras.remove(camera);
 	}
-
-	static var camerasVisible:Bool = true;
 
 	public static function setCamerasVisible(value:Bool):Void
 	{
@@ -54,20 +45,30 @@ class MobileControls
 				camera.visible = value;
 	}
 
-	public static function shiftCameras(x:Float, y:Float):Void
+	public static function layoutCameras():Void
 	{
-		if (x == shiftX && y == shiftY)
-			return;
-		shiftX = x;
-		shiftY = y;
 		for (camera in mobileCameras)
-		{
-			var base:Array<Float> = cameraBases.get(camera);
-			if (camera == null || base == null)
-				continue;
-			camera.x = base[0] + x;
-			camera.y = base[1] + y;
-		}
+			if (camera != null)
+				layoutCamera(camera);
+	}
+
+	static function layoutCamera(camera:FlxCamera):Void
+	{
+		var area:flixel.math.FlxRect = MobileWindow.getControlsArea();
+		var zoom:Float = area.width / MobileWindow.controlsWidth;
+		if (!Math.isFinite(zoom) || zoom <= 0)
+			zoom = 1;
+		var changed:Bool = camera.zoom != zoom || camera.width != MobileWindow.controlsWidth || camera.height != MobileWindow.controlsHeight;
+		camera.x = area.x;
+		camera.y = area.y;
+		area.put();
+		if (!changed)
+			return;
+		@:privateAccess camera.initialZoom = zoom;
+		camera.width = MobileWindow.controlsWidth;
+		camera.height = MobileWindow.controlsHeight;
+		camera.zoom = zoom;
+		camera.onResize();
 	}
 
 	public static function createBackButton(owner:FlxState, camera:FlxCamera):MobileButton
@@ -107,10 +108,32 @@ class MobileControls
 		if (index == -1)
 			return;
 
+		if (usesDoubleTap(owner))
+		{
+			if (index != selected)
+				change(index - selected);
+			if (TouchUtil.doubleTapped(items[index], camera))
+				MobileInput.inject(ACCEPT);
+			return;
+		}
+
 		if (index != selected)
 			change(index - selected);
-		if (TouchUtil.doubleTapped(items[index], camera))
+		else
 			MobileInput.inject(ACCEPT);
+	}
+
+	public static function usesDoubleTap(owner:FlxState):Bool
+	{
+		return Std.isOfType(owner, MainMenuState) || Std.isOfType(owner, CustomFreeplayState);
+	}
+
+	public static function confirmTap(owner:FlxState, ?object:FlxBasic):Bool
+	{
+		if (owner != MobileInput.topState())
+			return false;
+		var camera:FlxCamera = TouchUtil.getStateCamera(owner);
+		return usesDoubleTap(owner) ? TouchUtil.doubleTapped(object, camera) : TouchUtil.tapped(object, camera);
 	}
 
 	public static function handleTap(owner:FlxState, ?object:FlxBasic, control:Control):Bool

@@ -12,6 +12,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.util.Base64;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,8 @@ public class WindowMover {
     private static volatile int clipTop = 0;
     private static volatile int clipRight = 0;
     private static volatile int clipBottom = 0;
+    private static volatile float shiftX = 0;
+    private static volatile float shiftY = 0;
     private static volatile boolean windowPending = false;
     private static volatile String pendingOps = null;
     private static volatile boolean opsPending = false;
@@ -57,7 +60,7 @@ public class WindowMover {
 
         Overlay(Context context) {
             super(context);
-            setClickable(false);
+            setClickable(true);
             setFocusable(false);
             setWillNotDraw(false);
         }
@@ -68,12 +71,24 @@ public class WindowMover {
         }
 
         @Override
-        public boolean onTouchEvent(android.view.MotionEvent event) {
-            return false;
+        public boolean onTouchEvent(MotionEvent event) {
+            View target = surface;
+            if (target == null)
+                return false;
+            MotionEvent copy = MotionEvent.obtain(event);
+            copy.offsetLocation(-target.getTranslationX(), -target.getTranslationY());
+            target.dispatchTouchEvent(copy);
+            copy.recycle();
+            return true;
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
+            View target = surface;
+            float dx = target != null ? target.getTranslationX() : 0;
+            float dy = target != null ? target.getTranslationY() : 0;
+            canvas.save();
+            canvas.translate(dx, dy);
             synchronized (lock) {
                 for (Op op : ops) {
                     Bitmap bitmap = images.get(op.key);
@@ -83,11 +98,14 @@ public class WindowMover {
                     canvas.drawBitmap(bitmap, null, op.rect, paint);
                 }
             }
+            canvas.restore();
         }
     }
 
-    public static void setWindow(boolean active, int left, int top, int right, int bottom) {
+    public static void setWindow(boolean active, int left, int top, int right, int bottom, float offsetX, float offsetY) {
         windowActive = active;
+        shiftX = offsetX;
+        shiftY = offsetY;
         clipLeft = left;
         clipTop = top;
         clipRight = right;
@@ -160,10 +178,15 @@ public class WindowMover {
             return;
 
         boolean active = windowActive;
-        if (active)
+        if (active) {
             view.setClipBounds(new Rect(clipLeft, clipTop, clipRight, clipBottom));
-        else
+            view.setTranslationX(shiftX);
+            view.setTranslationY(shiftY);
+        } else {
             view.setClipBounds(null);
+            view.setTranslationX(0);
+            view.setTranslationY(0);
+        }
 
         if (active != appliedActive) {
             appliedActive = active;
@@ -171,8 +194,10 @@ public class WindowMover {
         }
 
         Overlay layer = getOverlay(activity, view);
-        if (layer != null)
+        if (layer != null) {
             layer.setVisibility(active ? View.VISIBLE : View.GONE);
+            layer.invalidate();
+        }
     }
 
     private static void applyControls(Activity activity) {

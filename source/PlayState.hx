@@ -4263,6 +4263,9 @@ class PlayState extends MusicBeatState
 				canvas.updateHitbox();
 				canvas.visible = false;
 				add(canvas);
+				#if mobile
+				mobile.MobileInput.addBlocker(canvas);
+				#end
 
 				writeText = new FlxText(30, 500, 416, "00", 16);
 				writeText.cameras = [camEst];
@@ -7979,27 +7982,61 @@ class PlayState extends MusicBeatState
 		customHB.alpha;
 
 		if(curStage == 'piracy' && canvas.visible == true){
-		if (FlxG.mouse.pressed)
+			var drawPressed:Bool = false;
+			var drawReleased:Bool = false;
+			var drawMoved:Bool = false;
+			var drawX:Float = 0;
+			var drawY:Float = 0;
+			#if mobile
+			var drawTouch:flixel.input.touch.FlxTouch = null;
+			for (touch in FlxG.touches.list)
 			{
-				canvas.drawCircle(FlxG.mouse.screenX - canvas.x, FlxG.mouse.screenY - canvas.y, 5, 0xFF0000FF);
-				if (lastPosition.x != 9999 && lastPosition.y != 9999 && FlxG.mouse.justMoved)
+				if (touch.pressed && (touch.overlaps(canvas, camEst) || (lastPosition.x != 9999 && !touch.justPressed)))
 				{
-					var tanSlope:Float = (-(FlxG.mouse.screenY - lastPosition.y)) / (FlxG.mouse.screenX - lastPosition.x);
+					drawTouch = touch;
+					break;
+				}
+			}
+			if (drawTouch != null)
+			{
+				var drawPoint:FlxPoint = drawTouch.getScreenPosition(camEst);
+				drawX = drawPoint.x;
+				drawY = drawPoint.y;
+				drawPoint.put();
+				drawPressed = true;
+				drawMoved = drawX != lastPosition.x || drawY != lastPosition.y;
+			}
+			else
+				drawReleased = lastPosition.x != 9999;
+			#else
+			drawPressed = FlxG.mouse.pressed;
+			drawReleased = FlxG.mouse.justReleased;
+			drawMoved = FlxG.mouse.justMoved;
+			drawX = FlxG.mouse.screenX;
+			drawY = FlxG.mouse.screenY;
+			#end
+
+			if (drawPressed)
+			{
+				canvas.drawCircle(drawX - canvas.x, drawY - canvas.y, 5, 0xFF0000FF);
+				if (lastPosition.x != 9999 && lastPosition.y != 9999 && drawMoved)
+				{
+					var tanSlope:Float = (-(drawY - lastPosition.y)) / (drawX - lastPosition.x);
 					var secSlope:Float = -(1 / tanSlope);
 					var angle:Float = Math.atan(secSlope);
 					var circlePos:FlxPoint = new FlxPoint(5 * Math.cos(angle), 5 * Math.sin(angle));
 					var vertices = new Array<FlxPoint>();
-					vertices[0] = new FlxPoint(FlxG.mouse.screenX - canvas.x + circlePos.x, FlxG.mouse.screenY - canvas.y - circlePos.y);
+					vertices[0] = new FlxPoint(drawX - canvas.x + circlePos.x, drawY - canvas.y - circlePos.y);
 					vertices[1] = new FlxPoint(lastPosition.x - canvas.x + circlePos.x, lastPosition.y - canvas.y - circlePos.y);
 					vertices[2] = new FlxPoint(lastPosition.x - canvas.x - circlePos.x, lastPosition.y - canvas.y + circlePos.y);
-					vertices[3] = new FlxPoint(FlxG.mouse.screenX - canvas.x - circlePos.x, FlxG.mouse.screenY - canvas.y + circlePos.y);
+					vertices[3] = new FlxPoint(drawX - canvas.x - circlePos.x, drawY - canvas.y + circlePos.y);
 					if (!Math.isNaN(vertices[0].x)) {
 						canvas.drawPolygon(vertices, 0xFF0000FF);
 					}
 				}
-				lastPosition = new FlxPoint(FlxG.mouse.screenX, FlxG.mouse.screenY);
+				lastPosition = new FlxPoint(drawX, drawY);
 			}
-			else if (FlxG.mouse.justReleased)
+			else if (drawReleased)
 			{
 				lastPosition = new FlxPoint(9999, 9999);
 			}
@@ -15744,6 +15781,10 @@ class PlayState extends MusicBeatState
 
 	override function destroy()
 	{
+		#if mobile
+		if (canvas != null)
+			mobile.MobileInput.removeBlocker(canvas);
+		#end
 		preventLuaRemove = true;
 		for (i in 0...luaArray.length)
 		{

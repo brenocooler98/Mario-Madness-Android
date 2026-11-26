@@ -19,6 +19,8 @@ class MobileWindow
 	public static var fullscreen(default, null):Bool = false;
 	public static var overscan(default, null):Float = 0;
 	public static var windowed(default, null):Bool = false;
+	public static var controlsWidth(default, null):Int = 1280;
+	public static var controlsHeight(default, null):Int = 720;
 
 	static var target:DisplayObject;
 	static var masks:Shape;
@@ -54,6 +56,13 @@ class MobileWindow
 	static var sentRight:Int = 0;
 	static var sentBottom:Int = 0;
 	static var windowSent:Bool = false;
+
+	static var controlsLeft:Float = 0;
+	static var controlsTop:Float = 0;
+	static var controlsRight:Float = 1280;
+	static var controlsBottom:Float = 720;
+	static var sentOffsetX:Float = 0;
+	static var sentOffsetY:Float = 0;
 
 	static var pointA:Point = new Point();
 	static var pointB:Point = new Point();
@@ -173,14 +182,14 @@ class MobileWindow
 		var cornerX:Float = (stageWidth - width * zoom) / 2;
 		var cornerY:Float = (stageHeight - height * zoom) / 2;
 
-		offsetX = Math.round((x - (displayWidth - width) / 2) * zoom);
-		offsetY = Math.round((y - (displayHeight - height) / 2) * zoom);
+		offsetX = (x - (displayWidth - width) / 2) * zoom;
+		offsetY = (y - (displayHeight - height) / 2) * zoom;
 		windowed = width != 1280 || height != 720 || offsetX != 0 || offsetY != 0;
 
 		target.scaleX = zoom;
 		target.scaleY = zoom;
-		target.x = ((zoom - 1) * root.x + cornerX + offsetX) / rootScale;
-		target.y = ((zoom - 1) * root.y + cornerY + offsetY) / rootScaleY;
+		target.x = ((zoom - 1) * root.x + cornerX) / rootScale;
+		target.y = ((zoom - 1) * root.y + cornerY) / rootScaleY;
 		lastTargetX = target.x;
 		lastTargetY = target.y;
 		lastTargetScale = target.scaleX;
@@ -195,8 +204,8 @@ class MobileWindow
 		}
 		updateOverscan(wide ? extra : 0);
 
-		var windowLeft:Float = cornerX + offsetX;
-		var windowTop:Float = cornerY + offsetY;
+		var windowLeft:Float = cornerX;
+		var windowTop:Float = cornerY;
 		var windowWidth:Float = width * zoom;
 		var windowHeight:Float = height * zoom;
 
@@ -217,11 +226,24 @@ class MobileWindow
 			drawMasks(stageWidth, stageHeight, windowLeft, windowTop, windowWidth, windowHeight);
 		}
 
-		pointA.setTo(0, 0);
-		pointB.setTo(offsetX, offsetY);
-		var origin:Point = FlxG.game.globalToLocal(pointA);
-		var moved:Point = FlxG.game.globalToLocal(pointB);
-		MobileControls.shiftCameras(origin.x - moved.x, origin.y - moved.y);
+		var referenceZoom:Float = Math.min(stageWidth / 1280, stageHeight / 720);
+		if (fullscreen)
+		{
+			controlsLeft = 0;
+			controlsTop = 0;
+			controlsRight = stageWidth;
+			controlsBottom = stageHeight;
+		}
+		else
+		{
+			controlsLeft = (stageWidth - 1280 * referenceZoom) / 2;
+			controlsTop = (stageHeight - 720 * referenceZoom) / 2;
+			controlsRight = controlsLeft + 1280 * referenceZoom;
+			controlsBottom = controlsTop + 720 * referenceZoom;
+		}
+		controlsWidth = Math.round((controlsRight - controlsLeft) / referenceZoom);
+		controlsHeight = Math.round((controlsBottom - controlsTop) / referenceZoom);
+		MobileControls.layoutCameras();
 
 		sendWindow(Math.floor(windowLeft), Math.floor(windowTop), Math.ceil(windowLeft + windowWidth), Math.ceil(windowTop + windowHeight));
 		ControlsOverlay.setActive(windowed);
@@ -229,7 +251,8 @@ class MobileWindow
 
 	static function sendWindow(left:Int, top:Int, right:Int, bottom:Int):Void
 	{
-		if (windowSent && sentWindowed == windowed && (!windowed || (left == sentLeft && top == sentTop && right == sentRight && bottom == sentBottom)))
+		if (windowSent && sentWindowed == windowed
+			&& (!windowed || (left == sentLeft && top == sentTop && right == sentRight && bottom == sentBottom && offsetX == sentOffsetX && offsetY == sentOffsetY)))
 			return;
 		windowSent = true;
 		sentWindowed = windowed;
@@ -237,7 +260,9 @@ class MobileWindow
 		sentTop = top;
 		sentRight = right;
 		sentBottom = bottom;
-		WindowMover.setWindow(windowed, left, top, right, bottom);
+		sentOffsetX = offsetX;
+		sentOffsetY = offsetY;
+		WindowMover.setWindow(windowed, left, top, right, bottom, windowed ? offsetX : 0, windowed ? offsetY : 0);
 	}
 
 	static function updateOverscan(extra:Float):Void
@@ -255,18 +280,20 @@ class MobileWindow
 		}
 	}
 
-	public static function getVisibleRect():FlxRect
+	public static function getControlsArea():FlxRect
 	{
-		apply();
+		if (FlxG.game == null || FlxG.scaleMode == null)
+			return FlxRect.get(0, 0, controlsWidth, controlsHeight);
 
-		if (FlxG.game == null || viewWidth <= 0 || viewHeight <= 0)
-			return FlxRect.get(0, 0, FlxG.width, FlxG.height);
-
-		pointA.setTo(viewX + offsetX, viewY + offsetY);
-		pointB.setTo(viewX + offsetX + viewWidth, viewY + offsetY + viewHeight);
+		var shiftX:Float = windowed ? offsetX : 0;
+		var shiftY:Float = windowed ? offsetY : 0;
+		pointA.setTo(controlsLeft - shiftX, controlsTop - shiftY);
 		var topLeft:Point = FlxG.game.globalToLocal(pointA);
+		pointB.setTo(controlsRight - shiftX, controlsBottom - shiftY);
 		var bottomRight:Point = FlxG.game.globalToLocal(pointB);
-		return FlxRect.get(Math.round(topLeft.x), Math.round(topLeft.y), Math.round(bottomRight.x - topLeft.x), Math.round(bottomRight.y - topLeft.y));
+		var scaleX:Float = FlxG.scaleMode.scale.x != 0 ? FlxG.scaleMode.scale.x : 1;
+		var scaleY:Float = FlxG.scaleMode.scale.y != 0 ? FlxG.scaleMode.scale.y : 1;
+		return FlxRect.get(topLeft.x / scaleX, topLeft.y / scaleY, (bottomRight.x - topLeft.x) / scaleX, (bottomRight.y - topLeft.y) / scaleY);
 	}
 
 	static function drawMasks(stageWidth:Int, stageHeight:Int, x:Float, y:Float, w:Float, h:Float):Void

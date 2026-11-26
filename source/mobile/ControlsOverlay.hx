@@ -74,10 +74,14 @@ class ControlsOverlay
 			sentImages.set(key, true);
 		}
 
-		var left:Float = camera.x + sprite.x - sprite.offset.x + (sprite.frameWidth - sprite.frameWidth * sprite.scale.x) / 2;
-		var top:Float = camera.y + sprite.y - sprite.offset.y + (sprite.frameHeight - sprite.frameHeight * sprite.scale.y) / 2;
-		topLeft.setTo(left, top);
-		bottomRight.setTo(left + sprite.frameWidth * sprite.scale.x, top + sprite.frameHeight * sprite.scale.y);
+		var scaleX:Float = FlxG.scaleMode.scale.x;
+		var scaleY:Float = FlxG.scaleMode.scale.y;
+		var drawWidth:Float = sprite.frameWidth * sprite.scale.x;
+		var drawHeight:Float = sprite.frameHeight * sprite.scale.y;
+		var worldX:Float = sprite.x - sprite.offset.x + (sprite.frameWidth - drawWidth) / 2;
+		var worldY:Float = sprite.y - sprite.offset.y + (sprite.frameHeight - drawHeight) / 2;
+		topLeft.setTo((camera.x + worldX * camera.zoom) * scaleX, (camera.y + worldY * camera.zoom) * scaleY);
+		bottomRight.setTo((camera.x + (worldX + drawWidth) * camera.zoom) * scaleX, (camera.y + (worldY + drawHeight) * camera.zoom) * scaleY);
 		var a:Point = FlxG.game.localToGlobal(topLeft);
 		var b:Point = FlxG.game.localToGlobal(bottomRight);
 

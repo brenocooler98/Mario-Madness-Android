@@ -155,7 +155,7 @@ class MusicBeatState extends FlxUIState
 	function touchConfirm(?object:flixel.FlxBasic):Bool
 	{
 		#if mobile
-		return this == mobile.MobileInput.topState() && mobile.TouchUtil.doubleTapped(object, mobile.TouchUtil.getStateCamera(this));
+		return mobile.MobileControls.confirmTap(this, object);
 		#else
 		return false;
 		#end
