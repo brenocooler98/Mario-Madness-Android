@@ -57,7 +57,7 @@ class PatchNotes extends MusicBeatState
 		#end
 		FlxG.mouse.visible = true;
 
-		FlxG.camera.setFilters([new ShaderFilter(ntsc = new NTSCGlitch(0.4)), new ShaderFilter(staticShader = new TVStatic())]);
+		FlxG.camera.filters = [new ShaderFilter(ntsc = new NTSCGlitch(0.4)), new ShaderFilter(staticShader = new TVStatic())];
 
 		bg = new FlxSprite(0, 0).loadGraphic(Paths.image('mainmenu/Patch/patch0'));
 		bg.antialiasing = ClientPrefs.globalAntialiasing;
@@ -126,6 +126,7 @@ class PatchNotes extends MusicBeatState
 		mousey = FlxG.mouse.screenY;
 		ogTexty = noteText.y;
 		wheely = noteText.y;
+		addBackButton();
 	}
 
 	override function update(elapsed:Float)

@@ -26,6 +26,7 @@ class ClientPrefs {
 	public static var ghostTapping:Bool = true;
 	public static var hideTime:Bool = false;
 	public static var vramSprites:Bool = true;
+	public static var hitboxAlpha:Float = 0.3;
 
 	public static var filtro85:Bool = true;
 	public static var pauseStart:Bool = false;
@@ -136,6 +137,7 @@ class ClientPrefs {
 		FlxG.save.data.worlds = worlds;
 		FlxG.save.data.worldsALT = worldsALT;
 		FlxG.save.data.vramSprites = vramSprites;
+		FlxG.save.data.hitboxAlpha = hitboxAlpha;
 
 		FlxG.save.flush();
 
@@ -223,6 +225,9 @@ class ClientPrefs {
 		}
 		if (FlxG.save.data.storyPass != null) {
 			storyPass = FlxG.save.data.storyPass;
+		}
+		if (FlxG.save.data.hitboxAlpha != null) {
+			hitboxAlpha = FlxG.save.data.hitboxAlpha;
 		}
 		if (FlxG.save.data.vramSprites != null) {
 			vramSprites = FlxG.save.data.vramSprites;

@@ -11,6 +11,19 @@ import openfl.display.FPS;
 import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.system.System;
+#if android
+import androidmanager.callback.Callback;
+import androidmanager.view.Window;
+import haxe.CallStack;
+import mobile.StorageUtil;
+import openfl.events.UncaughtErrorEvent;
+import sys.FileSystem;
+import sys.io.File;
+#end
+#if mobile
+import mobile.MobileInput;
+import mobile.MobileWindow;
+#end
 #if cpp
 import cpp.vm.Gc;
 #elseif hl
@@ -65,19 +78,22 @@ class Main extends Sprite {
 		initialState = TitleState;
 		#end
 		FlxTransitionableState.skipNextTransOut = true;
-		#if !mobile
 		fpsVar = new FPS(10, 4, 0xFFFFFF);
 
 		if (fpsVar != null) {
 			fpsVar.visible = false;
 		}
+		#if LAZY_LIBRARIES
+		registerLibraries(['shared', 'songs', 'videos']);
+		#end
+		#if android
+		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onCrash);
 		#end
 		addChild(new FlxGame(gameWidth, gameHeight, initialState, framerate, framerate, skipSplash, startFullscreen));
 
 		FlxG.signals.preStateSwitch.add(function () {
 			if (!Main.skipNextDump) {
 				Paths.clearStoredMemory(true);
-				FlxG.bitmap.dumpCache();
 			}
 			clearMajor();
 		});
@@ -87,15 +103,74 @@ class Main extends Sprite {
 			Main.skipNextDump = false;
 		});
 
-		#if !mobile
 		addChild(fpsVar);
-		#end
 		#if html5
 		FlxG.autoPause = false;
 		#end
 
+		#if android
+		Window.keepScreenOn = true;
+		Window.immersive = true;
+		Callback.init();
+		Callback.onPause.add(onAppPause);
+		FlxG.android.preventDefaultKeys = [BACK];
+		#end
+		#if mobile
+		MobileInput.init();
+		MobileWindow.init(this, gameWidth, gameHeight);
+		#end
+
 		FlxG.signals.gameResized.add(onResizeGame);
 	}
+
+	#if android
+	function onAppPause():Void
+	{
+		if (Std.isOfType(FlxG.state, PlayState) && FlxG.state.subState == null)
+			MobileInput.inject(PAUSE);
+	}
+
+	function onCrash(event:UncaughtErrorEvent):Void
+	{
+		var message:String = Std.string(event.error) + '\n\n' + CallStack.toString(CallStack.exceptionStack(true));
+
+		try
+		{
+			File.saveContent(StorageUtil.getCrashPath() + 'crash-' + Date.now().getTime() + '.txt', message);
+		}
+		catch (e:Dynamic) {}
+
+		lime.app.Application.current.window.alert(message, "FNF: Mario Madness crashed");
+		Sys.exit(1);
+	}
+	#end
+
+	#if LAZY_LIBRARIES
+	static function registerLibraries(ids:Array<String>):Void
+	{
+		@:privateAccess for (id in ids)
+		{
+			if (lime.utils.Assets.libraries.exists(id))
+				continue;
+
+			try
+			{
+				var path:String = lime.utils.Assets.libraryPaths.exists(id) ? lime.utils.Assets.libraryPaths.get(id) : id;
+				var manifest = lime.utils.AssetManifest.fromFile(path, haxe.io.Path.directory(path));
+				if (manifest == null)
+					continue;
+
+				var library = lime.utils.AssetLibrary.fromManifest(manifest);
+				if (library == null)
+					continue;
+
+				lime.utils.Assets.registerLibrary(id, library);
+				library.load();
+			}
+			catch (e:Dynamic) {}
+		}
+	}
+	#end
 
 	function onResizeGame(w:Int, h:Int) {
 		fixShaderSize(this);
@@ -104,7 +179,7 @@ class Main extends Sprite {
 		if (FlxG.cameras == null) return;
 		for (cam in FlxG.cameras.list) {
 			@:privateAccess
-			if (cam != null && (cam._filters != null || cam._filters != []))
+			if (cam != null && (cam.filters != null || cam.filters != []))
 				fixShaderSize(cam.flashSprite);
 		}	
 	}

@@ -1,29 +1,26 @@
+package;
+
 import flixel.FlxBasic;
 import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.FlxState;
-#if web
-import openfl.events.NetStatusEvent;
-import openfl.media.Video;
-import openfl.net.NetConnection;
-import openfl.net.NetStream;
-#else
-import openfl.events.Event;
-import vlc.DSBitmap;
+#if VIDEOS_ALLOWED
+import hxvlc.flixel.FlxVideoSprite;
 #end
 
-// its just FlxVideo but with different positioning
 class DSVideo extends FlxBasic
 {
-	#if VIDEOS_ALLOWED
 	public var finishCallback:Void->Void;
-
-	public static var vlcBitmap:DSBitmap;
-	#end
 
 	public var finished:Bool = false;
 
 	public var state:FlxState;
+
+	#if VIDEOS_ALLOWED
+	public var sprite:FlxVideoSprite;
+
+	var failed:Bool = false;
+	#end
 
 	public function new(name:String, camera:FlxCamera, state:FlxState)
 	{
@@ -36,129 +33,58 @@ class DSVideo extends FlxBasic
 			finished = true;
 		};
 
-		#if web
-		var player:Video = new Video();
-		player.x = 0;
-		player.y = 0;
-		FlxG.addChildBelowMouse(player);
-		var netConnect = new NetConnection();
-		netConnect.connect(null);
-		var netStream = new NetStream(netConnect);
-		netStream.client = {
-			onMetaData: function()
-			{
-				player.attachNetStream(netStream);
-				player.width = 256;
-				player.height = 384;
-			}
-		};
-		netConnect.addEventListener(NetStatusEvent.NET_STATUS, function(event:NetStatusEvent)
+		#if VIDEOS_ALLOWED
+		sprite = new FlxVideoSprite(null, 448, 72);
+		sprite.cameras = [camera];
+		sprite.bitmap.onVideoFormatSetup.add(function()
 		{
-			if (event.info.code == "NetStream.Play.Complete")
-			{
-				netStream.dispose();
-				if (FlxG.game.contains(player))
-					FlxG.game.removeChild(player);
-
-				if (finishCallback != null)
-					finishCallback();
-			}
+			sprite.setGraphicSize(384, 576);
+			sprite.updateHitbox();
+			sprite.setPosition(448, 72);
 		});
-		netStream.play(name);
-		#elseif desktop
-		// by Polybius, check out PolyEngine! https://github.com/polybiusproxy/PolyEngine
+		sprite.bitmap.onEndReached.add(onComplete);
+		sprite.bitmap.onEncounteredError.add(function(_:String) failed = true);
+		state.add(sprite);
 
-		vlcBitmap = new DSBitmap();
-		state.add(vlcBitmap.renderSprite);
-		vlcBitmap.set_height(576);
-		vlcBitmap.set_width(384);
-		vlcBitmap.x = 448;
-		vlcBitmap.y = 72;
-
-		vlcBitmap.onComplete = onVLCComplete;
-		vlcBitmap.onError = onVLCError;
-
-		FlxG.stage.addEventListener(Event.ENTER_FRAME, fixVolume);
-		vlcBitmap.repeat = 0;
-		vlcBitmap.inWindow = false;
-		vlcBitmap.fullscreen = false;
-		fixVolume(null);
-
-		FlxG.addChildBelowMouse(vlcBitmap);
-		vlcBitmap.renderSprite.cameras = [camera];
-		vlcBitmap.play(checkFile(name));
+		if (!sprite.load(name) || !sprite.play())
+			failed = true;
+		#else
+		finished = true;
 		#end
 	}
 
-	#if desktop
-	function checkFile(fileName:String):String
+	#if VIDEOS_ALLOWED
+	override function update(elapsed:Float):Void
 	{
-		var pDir = "";
-		var appDir = "file:///" + Sys.getCwd() + "/";
-
-		if (fileName.indexOf(":") == -1) // Not a path
-			pDir = appDir;
-		else if (fileName.indexOf("file://") == -1 || fileName.indexOf("http") == -1) // C:, D: etc? ..missing "file:///" ?
-			pDir = "file:///";
-
-		return pDir + fileName;
-	}
-
-	public static function onFocus()
-	{
-		if (vlcBitmap != null)
+		super.update(elapsed);
+		if (failed)
 		{
-			vlcBitmap.resume();
+			failed = false;
+			onComplete();
 		}
 	}
 
-	public static function onFocusLost()
+	function onComplete():Void
 	{
-		if (vlcBitmap != null)
+		if (sprite != null)
 		{
-			vlcBitmap.pause();
-		}
-	}
-
-	function fixVolume(e:Event)
-	{
-		// shitty volume fix
-		vlcBitmap.volume = 0;
-		if (!FlxG.sound.muted && FlxG.sound.volume > 0.01)
-		{ // Kind of fixes the volume being too low when you decrease it
-			vlcBitmap.volume = FlxG.sound.volume * 0.5 + 0.5;
-		}
-	}
-
-	public function onVLCComplete()
-	{
-		vlcBitmap.renderSprite.visible = false;
-
-		state.remove(vlcBitmap.renderSprite);
-
-		vlcBitmap.stop();
-
-		// Clean player, just in case!
-		vlcBitmap.dispose();
-
-		if (FlxG.game.contains(vlcBitmap))
-		{
-			FlxG.game.removeChild(vlcBitmap);
+			sprite.visible = false;
+			state.remove(sprite);
 		}
 
 		if (finishCallback != null)
-		{
 			finishCallback();
-		}
 	}
 
-	function onVLCError()
+	override function destroy():Void
 	{
-		trace("An error has occured while trying to load the video.\nPlease, check if the file you're loading exists.");
-		if (finishCallback != null)
+		if (sprite != null)
 		{
-			finishCallback();
+			state.remove(sprite);
+			sprite.destroy();
+			sprite = null;
 		}
+		super.destroy();
 	}
 	#end
 }

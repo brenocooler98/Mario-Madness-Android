@@ -8,8 +8,8 @@ import flixel.FlxSprite;
 import flixel.addons.display.FlxBackdrop;
 import flixel.group.FlxGroup;
 import flixel.input.mouse.FlxMouseEventManager;
-import flixel.system.FlxSound;
-import flixel.system.FlxSoundGroup;
+import flixel.sound.FlxSound;
+import flixel.sound.FlxSoundGroup;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
@@ -133,12 +133,16 @@ class PartyState extends MusicBeatState
 		PlayState.ogwinX = Lib.application.window.x;
 		PlayState.ogwinY = Lib.application.window.y;
 		var win = Lib.application.window;
-		win.move(win.x + Std.int((win.width - 512) / 2), win.y + Std.int((win.height - 768) / 2));
-		FlxG.resizeWindow(512, 768);
+		#if desktop
+		win.move(win.x + Std.int((CoolUtil.windowWidth - 512) / 2), win.y + Std.int((CoolUtil.windowHeight - 768) / 2));
+		#end
+		CoolUtil.resizeWindow(512, 768);
 		FlxG.resizeGame(512, 768);
 		Lib.current.x = 0;
 		Lib.current.y = 0;
+		#if desktop
 		win.resizable = false;
+		#end
 		Main.fpsVar.visible = false;
 		FlxG.sound.volume = 1;
 
@@ -523,7 +527,7 @@ class PartyState extends MusicBeatState
 										// botStart.visible = false;
 										// FlxG.sound.music.stop();
 										// Lib.application.window.resizable = true;
-										// Lib.application.window.resize(1280, 720);
+										// CoolUtil.resizeWindow(1280, 720);
 										// Lib.current.scaleX = 1;
 										// Lib.current.scaleY = 1;
 										// FlxG.sound.volume = FlxG.save.data.volume;

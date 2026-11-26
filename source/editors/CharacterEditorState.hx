@@ -22,7 +22,6 @@ import flixel.animation.FlxAnimation;
 import flixel.graphics.FlxGraphic;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.input.keyboard.FlxKey;
-import flixel.system.debug.interaction.tools.Pointer.GraphicCursorCross;
 import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.ui.FlxSpriteButton;
@@ -89,16 +88,20 @@ class CharacterEditorState extends MusicBeatState
 		FlxG.cameras.reset(camEditor);
 		FlxG.cameras.add(camHUD);
 		FlxG.cameras.add(camMenu);
-		FlxCamera.defaultCameras = [camEditor];
+		CoolUtil.setDefaultCamera(camEditor);
 
-			if(Lib.application.window.width == 800 && Lib.application.window.height == 600){
+			if(CoolUtil.windowWidth == 800 && CoolUtil.windowHeight == 600){
+				#if desktop
 				Lib.application.window.move(Lib.application.window.x - 240, Lib.application.window.y - 60);
-				Lib.application.window.resize(1280, 720);
+				#end
+				CoolUtil.resizeWindow(1280, 720);
 			}
-			else if(Lib.application.window.width == 512 && Lib.application.window.height == 768)
+			else if(CoolUtil.windowWidth == 512 && CoolUtil.windowHeight == 768)
 			{
-				Lib.application.window.resize(1280, 720);
+				CoolUtil.resizeWindow(1280, 720);
+				#if desktop
 				Lib.application.window.move(PlayState.ogwinX, PlayState.ogwinY);
+				#end
 			}
 
 			Lib.current.scaleX = 1;
@@ -109,8 +112,9 @@ class CharacterEditorState extends MusicBeatState
 		charLayer = new FlxTypedGroup<Character>();
 		add(charLayer);
 
-		var pointer:FlxGraphic = FlxGraphic.fromClass(GraphicCursorCross);
-		cameraFollowPointer = new FlxSprite().loadGraphic(pointer);
+		cameraFollowPointer = new FlxSprite().makeGraphic(11, 11, FlxColor.TRANSPARENT, true);
+		flixel.util.FlxSpriteUtil.drawRect(cameraFollowPointer, 5, 0, 1, 11, FlxColor.WHITE);
+		flixel.util.FlxSpriteUtil.drawRect(cameraFollowPointer, 0, 5, 11, 1, FlxColor.WHITE);
 		cameraFollowPointer.setGraphicSize(40, 40);
 		cameraFollowPointer.updateHitbox();
 		cameraFollowPointer.color = FlxColor.WHITE;

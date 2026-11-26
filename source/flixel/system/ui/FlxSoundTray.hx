@@ -158,7 +158,7 @@ class FlxSoundTray extends Sprite
 	{
 		if (!silent)
 		{
-			var sound = FlxAssets.getSound(up ? volumeUpSound : volumeDownSound);
+			var sound = FlxAssets.getSoundAddExtension(up ? volumeUpSound : volumeDownSound);
 			if (sound != null)
 				FlxG.sound.load(sound).play();
 		}
@@ -187,6 +187,21 @@ class FlxSoundTray extends Sprite
 				_bars[i].alpha = 0.5;
 			}
 		}
+	}
+
+	public function showIncrement():Void
+	{
+		show(true);
+	}
+
+	public function showDecrement():Void
+	{
+		show(false);
+	}
+
+	public function showAnim(volume:Float, ?sound:Dynamic, duration:Float = 1.0, label:String = "VOLUME"):Void
+	{
+		show(true);
 	}
 
 	public function screenCenter():Void

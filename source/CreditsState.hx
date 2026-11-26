@@ -302,6 +302,9 @@ class CreditsState extends MusicBeatState
 			FlxG.sound.playMusic(Paths.music('creditsmenu'), 1);
 		}
 
+		if (!autoscroll)
+			addBackButton();
+
 		super.create();
 	}
 
@@ -323,6 +326,7 @@ class CreditsState extends MusicBeatState
 				newPos += 40;
 			if (FlxG.mouse.wheel > 0)
 				newPos -= 40;
+			newPos -= touchScroll();
 
 			if(newPos < 200)
 				newPos = 200;

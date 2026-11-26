@@ -15,7 +15,7 @@ import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.math.FlxPoint;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
@@ -47,7 +47,7 @@ class EditorLua {
 		//trace('Lua version: ' + Lua.version());
 		//trace("LuaJIT version: " + Lua.versionJIT());
 
-		var result:Dynamic = LuaL.dofile(lua, script);
+		var result:Dynamic = #if (sys && !mobile) LuaL.dofile(lua, script); #else (sys.FileSystem.exists(script) ? LuaL.dofile(lua, script) : LuaL.dostring(lua, openfl.utils.Assets.getText(script))); #end
 		var resultStr:String = Lua.tostring(lua, result);
 		if(resultStr != null && result != 0) {
 			lime.app.Application.current.window.alert(resultStr, 'Error on .LUA script!');

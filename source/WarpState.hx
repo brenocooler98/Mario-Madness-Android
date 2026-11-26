@@ -14,7 +14,7 @@ import flixel.effects.FlxFlicker;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.group.FlxSpriteGroup.FlxTypedSpriteGroup;
 import flixel.math.FlxMath;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
@@ -108,12 +108,16 @@ class WarpState extends MusicBeatState
 				PlayState.ogwinY = Lib.application.window.y;
 				}
 			var win = Lib.application.window;
+			#if desktop
 			win.move(PlayState.ogwinX, PlayState.ogwinY);
-			FlxG.resizeWindow(1280, 720);
+			#end
+			CoolUtil.resizeWindow(1280, 720);
 			FlxG.resizeGame(1280, 720);
 			Lib.current.x = 0;
 			Lib.current.y = 0;
+			#if desktop
 			win.resizable = true;
+			#end
 		}
 
 		var backbg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
@@ -325,7 +329,10 @@ class WarpState extends MusicBeatState
 		screenText.text = canciones[curSelected][0].toUpperCase();
 
 		vcr = new CRTShader();
-		FlxG.camera.setFilters([new ShaderFilter(vcr)]);
+		FlxG.camera.filters = [new ShaderFilter(vcr)];
+
+		enableTouchMenu();
+		addBackButton();
 
 		if(PlayState.isWarp && !startCut) goToWorld();
 		if(pipeCut) openSubState(new PipeState());
@@ -333,7 +340,7 @@ class WarpState extends MusicBeatState
 
 		// try {
 		//	transition = new SMWPixelBlurShader();
-		//	FlxG.camera.setFilters([new ShaderFilter(transition)]);
+		//	FlxG.camera.filters = [new ShaderFilter(transition)];
 		//	} catch (e) {
 		//	trace(e.message);
 		//	}
@@ -369,17 +376,17 @@ class WarpState extends MusicBeatState
 
 			if (quieto)
 			{
-				if (controls.ACCEPT)
+				if (controls.ACCEPT || touchTapped())
 					{
 						goodbye();
 					}
 
-				if (FlxG.keys.justPressed.LEFT)
+				if (FlxG.keys.justPressed.LEFT #if mobile || controls.UI_LEFT_P #end)
 				{
 					quieto = false;
 					caminar(canciones[curSelected][3]);
 				}
-				else if (FlxG.keys.justPressed.RIGHT)
+				else if (FlxG.keys.justPressed.RIGHT #if mobile || controls.UI_RIGHT_P #end)
 				{
 					quieto = false;
 					caminar(canciones[curSelected][4]);
@@ -388,7 +395,7 @@ class WarpState extends MusicBeatState
 				// NORMAL
 			}
 			else{
-				if (controls.ACCEPT && canPress)
+				if ((controls.ACCEPT || touchTapped()) && canPress)
 					{
 						canPress = false;
 						introButton.animation.play('press');
@@ -752,7 +759,9 @@ class WorldState extends MusicBeatSubstate
 
 		camWorld = new FlxCamera();
 		FlxG.cameras.reset(camWorld);
-		FlxCamera.defaultCameras = [camWorld];
+		enableTouchMenu();
+		addBackButton();
+		CoolUtil.setDefaultCamera(camWorld);
 
 		blackBG = new FlxSprite().makeGraphic(FlxG.width * 2, FlxG.height * 2, FlxColor.BLACK);
 		add(blackBG);
@@ -1108,7 +1117,7 @@ class WorldState extends MusicBeatSubstate
 
 		effect = new SMWPixelBlurShader();
 		vcr = new CRTShader();
-		camWorld.setFilters([new ShaderFilter(effect.shader), new ShaderFilter(vcr)]);
+		camWorld.filters = [new ShaderFilter(effect.shader), new ShaderFilter(vcr)];
 
 		for (i in 0...5)
 			{
@@ -1174,7 +1183,7 @@ class WorldState extends MusicBeatSubstate
 					}
 
 					if(pibeback.animation.curAnim.name != 'enter' && quieto){
-					if (FlxG.keys.pressed.ESCAPE && curSelected != 0){
+					if ((FlxG.keys.pressed.ESCAPE #if mobile || (backButton != null && backButton.held()) #end) && curSelected != 0){
 							if(pipeTimer == 0){
 								
 								pibeback.animation.play('intro');
@@ -1216,25 +1225,25 @@ class WorldState extends MusicBeatSubstate
 
 
 			if(quieto && pipeTimer == 0){
-				if (FlxG.keys.justPressed.UP)
+				if (FlxG.keys.justPressed.UP #if mobile || controls.UI_UP_P #end)
 				{
 					caminar(canciones[curSelected][1], 1);
 				}
-				else if (FlxG.keys.justPressed.DOWN)
+				else if (FlxG.keys.justPressed.DOWN #if mobile || controls.UI_DOWN_P #end)
 				{
 					caminar(canciones[curSelected][2], 2);
 				}
-				else if (FlxG.keys.justPressed.LEFT)
+				else if (FlxG.keys.justPressed.LEFT #if mobile || controls.UI_LEFT_P #end)
 				{
 					caminar(canciones[curSelected][3], 3);
 				}
-				else if (FlxG.keys.justPressed.RIGHT)
+				else if (FlxG.keys.justPressed.RIGHT #if mobile || controls.UI_RIGHT_P #end)
 				{
 					caminar(canciones[curSelected][4], 4);
 				}
 
 
-			if (controls.ACCEPT && pipeTimer == 0)
+			if ((controls.ACCEPT || touchTapped()) && pipeTimer == 0)
 				{
 					if(canciones[curSelected][0] == 'Start'){
 						quieto = false;
@@ -1821,6 +1830,8 @@ class UltraState extends MusicBeatSubstate
 
 		camWorld = new FlxCamera();
 		FlxG.cameras.reset(camWorld);
+		enableTouchMenu();
+		addBackButton();
 
 		bg0 = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		bg0.setGraphicSize(Std.int(bg0.width * 5));
@@ -1950,7 +1961,7 @@ class UltraState extends MusicBeatSubstate
 
 		effect = new SMWPixelBlurShader();
 		vcr = new CRTShader();
-		camWorld.setFilters([new ShaderFilter(effect.shader), new ShaderFilter(vcr)]);
+		camWorld.filters = [new ShaderFilter(effect.shader), new ShaderFilter(vcr)];
 		camFollow = new FlxObject(0, 0, 1, 1);
 		camWorld.follow(camFollow, FlxCameraFollowStyle.LOCKON);
 		camWorld.deadzone.x -= 45;
@@ -2037,13 +2048,13 @@ class UltraState extends MusicBeatSubstate
 				#end
 				if (quieto)
 				{
-					if (controls.ACCEPT && cutScenes == 2)
+					if ((controls.ACCEPT || touchTapped()) && cutScenes == 2)
 						{
 							cutScenes = 3;
 							gotoSong();
 						}
 
-					if (FlxG.keys.justPressed.UP && cutScenes == 0)
+					if ((FlxG.keys.justPressed.UP #if mobile || controls.UI_UP_P || touchTapped() #end) && cutScenes == 0)
 						{
 							quieto = false;
 							caminar();
@@ -2391,7 +2402,7 @@ class VirtualState extends MusicBeatSubstate
 	}
 
 	override function update(elapsed:Float) {
-		if (controls.ACCEPT && !selected){
+		if ((controls.ACCEPT || touchTapped()) && !selected){
 			selected = true;
 
 			for (i in 0...6)

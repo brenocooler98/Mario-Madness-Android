@@ -19,6 +19,22 @@ import openfl.utils.Assets;
 #end
 
 class CoolUtil {
+	public static function getTopCamera():flixel.FlxCamera
+	{
+		var index:Int = FlxG.cameras.list.length - 1;
+		#if mobile
+		while (index > 0 && mobile.MobileControls.isMobileCamera(FlxG.cameras.list[index]))
+			index--;
+		#end
+		return FlxG.cameras.list[index];
+	}
+
+	public static function setDefaultCamera(camera:flixel.FlxCamera):Void
+	{
+		for (cam in FlxG.cameras.list)
+			FlxG.cameras.setDefaultDrawTarget(cam, cam == camera);
+	}
+
 	inline public static function scale(x:Float, l1:Float, h1:Float, l2:Float, h2:Float):Float
 		return ((x - l1) * (h2 - l2) / (h1 - l1) + l2);
 
@@ -63,7 +79,7 @@ class CoolUtil {
 
 	public static function coolTextFile(path:String):Array<String> {
 		var daList:Array<String> = [];
-		#if sys
+		#if (sys && !mobile)
 		if (FileSystem.exists(path))
 			daList = File.getContent(path).trim().split('\n');
 		#else
@@ -131,8 +147,40 @@ class CoolUtil {
 	}
 
 	public static inline function centerWindowOnPoint(?point:FlxPoint) {
+		#if desktop
 		Lib.application.window.x = Std.int(point.x - (Lib.application.window.width / 2));
 		Lib.application.window.y = Std.int(point.y - (Lib.application.window.height / 2));
+		#end
+	}
+
+	public static var windowWidth(get, never):Int;
+	public static var windowHeight(get, never):Int;
+
+	static function get_windowWidth():Int
+	{
+		#if mobile
+		return mobile.MobileWindow.width;
+		#else
+		return Lib.application.window.width;
+		#end
+	}
+
+	static function get_windowHeight():Int
+	{
+		#if mobile
+		return mobile.MobileWindow.height;
+		#else
+		return Lib.application.window.height;
+		#end
+	}
+
+	public static function resizeWindow(width:Int, height:Int):Void
+	{
+		#if mobile
+		mobile.MobileWindow.resize(width, height);
+		#else
+		FlxG.resizeWindow(width, height);
+		#end
 	}
 
 	public static inline function getCenterWindowPoint():FlxPoint {

@@ -25,7 +25,7 @@ import flixel.group.FlxGroup;
 import flixel.input.keyboard.FlxKey;
 import flixel.math.FlxMath;
 import flixel.math.FlxPoint;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.ui.FlxSpriteButton;
@@ -195,21 +195,25 @@ class ChartingState extends MusicBeatState
 		DiscordClient.changePresence("Chart Editor", StringTools.replace(PlayState.SONG.song, '-', ' '));
 		#end
 
-			if(Lib.application.window.width == 800 && Lib.application.window.height == 600){
+			if(CoolUtil.windowWidth == 800 && CoolUtil.windowHeight == 600){
+				#if desktop
 				Lib.application.window.move(Lib.application.window.x - 240, Lib.application.window.y - 60);
-				Lib.application.window.resize(1280, 720);
+				#end
+				CoolUtil.resizeWindow(1280, 720);
 			}
-			else if(Lib.application.window.width == 512 && Lib.application.window.height == 768)
+			else if(CoolUtil.windowWidth == 512 && CoolUtil.windowHeight == 768)
 			{
-				Lib.application.window.resize(1280, 720);
+				CoolUtil.resizeWindow(1280, 720);
+				#if desktop
 				Lib.application.window.move(PlayState.ogwinX, PlayState.ogwinY);
+				#end
 			}
 
 			Lib.current.scaleX = 1;
 			Lib.current.scaleY = 1;
 
 			if(PlayState.curStage == 'virtual'){
-				Lib.application.window.resize(1280, 720);
+				CoolUtil.resizeWindow(1280, 720);
 				CppAPI.setWallpaper('old');
 			}
 
@@ -414,7 +418,7 @@ class ChartingState extends MusicBeatState
 		{
 			var songName:String = Paths.formatToSongPath(_song.song);
 			var file:String = Paths.json('songData/' + songName + '/events');
-			#if sys
+			#if MODS_ALLOWED
 			if (#if MODS_ALLOWED FileSystem.exists(Paths.modsJson(songName + '/events')) || #end FileSystem.exists(file))
 			#else
 			if (OpenFlAssets.exists(file))
@@ -766,7 +770,7 @@ class ChartingState extends MusicBeatState
 			key++;
 		}
 
-		#if LUA_ALLOWED
+		#if (LUA_ALLOWED && MODS_ALLOWED)
 		var directories:Array<String> = [Paths.mods('custom_notetypes/'), Paths.mods(Paths.currentModDirectory + '/custom_notetypes/')];
 		for (i in 0...directories.length) {
 			var directory:String =  directories[i];
@@ -818,7 +822,7 @@ class ChartingState extends MusicBeatState
 		var tab_group_event = new FlxUI(null, UI_box);
 		tab_group_event.name = 'Events';
 
-		#if LUA_ALLOWED
+		#if (LUA_ALLOWED && MODS_ALLOWED)
 		var eventPushedMap:Map<String, Bool> = new Map<String, Bool>();
 		var directories:Array<String> = [Paths.mods('custom_events/'), Paths.mods(Paths.currentModDirectory + '/custom_events/')];
 		for (i in 0...directories.length) {

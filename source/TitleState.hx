@@ -98,7 +98,7 @@ class TitleState extends MusicBeatState {
 				BaseScaleMode.ogSize = FlxPoint.get(1280, 720); // fuck you haxeflixel
 				FlxG.scaleMode = new flixel.system.scaleModes.RatioScaleMode();
 		
-				FlxG.resizeWindow(1280, 720);
+				CoolUtil.resizeWindow(1280, 720);
 				FlxG.resizeGame(1280, 720);
 				return;
 				#end
@@ -137,7 +137,6 @@ class TitleState extends MusicBeatState {
 		camGame = new FlxCamera();		
 		camFollow = new FlxObject((FlxG.width / 2) + 2.5, (FlxG.height / 2) - 50, 1, 1);
 		camGame.target = camFollow;
-		FlxCamera.defaultCameras = [camGame];
 
 		camHUD = new FlxCamera();
 		camHUD.bgColor.alpha = 0;
@@ -154,10 +153,10 @@ class TitleState extends MusicBeatState {
 		bloom = new BloomShader();
 		bloom.Size.value = [3.0];
 
-		camHUD.setFilters([new ShaderFilter(ntsc = new NTSCSFilter()), new ShaderFilter(bloom)]);
-		@:privateAccess var shadersButCooler:Array<BitmapFilter> = [for (shader in camHUD._filters) shader]; // W NAMING!!!!
+		camHUD.filters = [new ShaderFilter(ntsc = new NTSCSFilter()), new ShaderFilter(bloom)];
+		@:privateAccess var shadersButCooler:Array<BitmapFilter> = [for (shader in camHUD.filters) shader]; // W NAMING!!!!
 		shadersButCooler.push(new ShaderFilter(staticShader = new TVStatic()));
-		FlxG.camera.setFilters(shadersButCooler);
+		FlxG.camera.filters = shadersButCooler;
 
 		blackSprite = new FlxSprite().makeGraphic(FlxG.width * 3, FlxG.height * 3, FlxColor.BLACK);
 		blackSprite.updateHitbox();
@@ -311,7 +310,9 @@ class TitleState extends MusicBeatState {
 		var pressedEnter:Bool = FlxG.keys.justPressed.ENTER;
 
 		if (FlxG.keys.justPressed.F) {
+			#if desktop
 			FlxG.fullscreen = !FlxG.fullscreen;
+			#end
 		}
 
 		#if mobile
@@ -386,12 +387,12 @@ class TitleState extends MusicBeatState {
 							onComplete: (_) -> {
 								FlxG.updateFramerate = 30; // Makes it smoother and consistant
 
-								windowRes = FlxPoint.get(Lib.application.window.width, Lib.application.window.height);
+								windowRes = FlxPoint.get(CoolUtil.windowWidth, CoolUtil.windowHeight);
 								windowPos = CoolUtil.getCenterWindowPoint();
 								startTime = Sys.time();
 								
 								windowTwn = FlxTween.tween(windowRes, {x: 1280, y: 720}, 0.3 * 4, {ease: FlxEase.circInOut, onUpdate: (_) -> {
-									FlxG.resizeWindow(Std.int(windowRes.x), Std.int(windowRes.y));
+									CoolUtil.resizeWindow(Std.int(windowRes.x), Std.int(windowRes.y));
 									CoolUtil.centerWindowOnPoint(windowPos);
 									if ((Sys.time() - startTime) > 1.35) {
 										windowTwn.cancel();
@@ -421,7 +422,7 @@ class TitleState extends MusicBeatState {
 
 		FlxG.scaleMode = new flixel.system.scaleModes.RatioScaleMode();
 
-		FlxG.resizeWindow(1280, 720);
+		CoolUtil.resizeWindow(1280, 720);
 		FlxG.resizeGame(1280, 720);
 		CoolUtil.centerWindowOnPoint(windowPos);
 		

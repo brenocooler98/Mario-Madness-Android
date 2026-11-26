@@ -2,6 +2,7 @@ package;
 
 import flixel.FlxG;
 import flixel.input.FlxInput;
+import flixel.input.FlxInput.FlxInputState;
 import flixel.input.actions.FlxAction;
 import flixel.input.actions.FlxActionInput;
 import flixel.input.actions.FlxActionInputDigital;
@@ -10,6 +11,9 @@ import flixel.input.actions.FlxActionSet;
 import flixel.input.gamepad.FlxGamepadButton;
 import flixel.input.gamepad.FlxGamepadInputID;
 import flixel.input.keyboard.FlxKey;
+#if mobile
+import mobile.MobileInput;
+#end
 
 #if (haxe >= "4.0.0")
 enum abstract Action(String) to String from String
@@ -164,147 +168,147 @@ class Controls extends FlxActionSet
 	public var UI_UP(get, never):Bool;
 
 	inline function get_UI_UP()
-		return _ui_up.check();
+		return _ui_up.check() #if mobile || MobileInput.check(Control.UI_UP, PRESSED) #end;
 
 	public var UI_LEFT(get, never):Bool;
 
 	inline function get_UI_LEFT()
-		return _ui_left.check();
+		return _ui_left.check() #if mobile || MobileInput.check(Control.UI_LEFT, PRESSED) #end;
 
 	public var UI_RIGHT(get, never):Bool;
 
 	inline function get_UI_RIGHT()
-		return _ui_right.check();
+		return _ui_right.check() #if mobile || MobileInput.check(Control.UI_RIGHT, PRESSED) #end;
 
 	public var UI_DOWN(get, never):Bool;
 
 	inline function get_UI_DOWN()
-		return _ui_down.check();
+		return _ui_down.check() #if mobile || MobileInput.check(Control.UI_DOWN, PRESSED) #end;
 
 	public var UI_UP_P(get, never):Bool;
 
 	inline function get_UI_UP_P()
-		return _ui_upP.check();
+		return _ui_upP.check() #if mobile || MobileInput.check(Control.UI_UP, JUST_PRESSED) #end;
 
 	public var UI_LEFT_P(get, never):Bool;
 
 	inline function get_UI_LEFT_P()
-		return _ui_leftP.check();
+		return _ui_leftP.check() #if mobile || MobileInput.check(Control.UI_LEFT, JUST_PRESSED) #end;
 
 	public var UI_RIGHT_P(get, never):Bool;
 
 	inline function get_UI_RIGHT_P()
-		return _ui_rightP.check();
+		return _ui_rightP.check() #if mobile || MobileInput.check(Control.UI_RIGHT, JUST_PRESSED) #end;
 
 	public var UI_DOWN_P(get, never):Bool;
 
 	inline function get_UI_DOWN_P()
-		return _ui_downP.check();
+		return _ui_downP.check() #if mobile || MobileInput.check(Control.UI_DOWN, JUST_PRESSED) #end;
 
 	public var UI_UP_R(get, never):Bool;
 
 	inline function get_UI_UP_R()
-		return _ui_upR.check();
+		return _ui_upR.check() #if mobile || MobileInput.check(Control.UI_UP, JUST_RELEASED) #end;
 
 	public var UI_LEFT_R(get, never):Bool;
 
 	inline function get_UI_LEFT_R()
-		return _ui_leftR.check();
+		return _ui_leftR.check() #if mobile || MobileInput.check(Control.UI_LEFT, JUST_RELEASED) #end;
 
 	public var UI_RIGHT_R(get, never):Bool;
 
 	inline function get_UI_RIGHT_R()
-		return _ui_rightR.check();
+		return _ui_rightR.check() #if mobile || MobileInput.check(Control.UI_RIGHT, JUST_RELEASED) #end;
 
 	public var UI_DOWN_R(get, never):Bool;
 
 	inline function get_UI_DOWN_R()
-		return _ui_downR.check();
+		return _ui_downR.check() #if mobile || MobileInput.check(Control.UI_DOWN, JUST_RELEASED) #end;
 
 	public var NOTE_UP(get, never):Bool;
 
 	inline function get_NOTE_UP()
-		return _note_up.check();
+		return _note_up.check() #if mobile || MobileInput.check(Control.NOTE_UP, PRESSED) #end;
 
 	public var NOTE_LEFT(get, never):Bool;
 
 	inline function get_NOTE_LEFT()
-		return _note_left.check();
+		return _note_left.check() #if mobile || MobileInput.check(Control.NOTE_LEFT, PRESSED) #end;
 
 	public var NOTE_RIGHT(get, never):Bool;
 
 	inline function get_NOTE_RIGHT()
-		return _note_right.check();
+		return _note_right.check() #if mobile || MobileInput.check(Control.NOTE_RIGHT, PRESSED) #end;
 
 	public var NOTE_DOWN(get, never):Bool;
 
 	inline function get_NOTE_DOWN()
-		return _note_down.check();
+		return _note_down.check() #if mobile || MobileInput.check(Control.NOTE_DOWN, PRESSED) #end;
 
 	public var NOTE_UP_P(get, never):Bool;
 
 	inline function get_NOTE_UP_P()
-		return _note_upP.check();
+		return _note_upP.check() #if mobile || MobileInput.check(Control.NOTE_UP, JUST_PRESSED) #end;
 
 	public var NOTE_LEFT_P(get, never):Bool;
 
 	inline function get_NOTE_LEFT_P()
-		return _note_leftP.check();
+		return _note_leftP.check() #if mobile || MobileInput.check(Control.NOTE_LEFT, JUST_PRESSED) #end;
 
 	public var NOTE_RIGHT_P(get, never):Bool;
 
 	inline function get_NOTE_RIGHT_P()
-		return _note_rightP.check();
+		return _note_rightP.check() #if mobile || MobileInput.check(Control.NOTE_RIGHT, JUST_PRESSED) #end;
 
 	public var NOTE_DOWN_P(get, never):Bool;
 
 	inline function get_NOTE_DOWN_P()
-		return _note_downP.check();
+		return _note_downP.check() #if mobile || MobileInput.check(Control.NOTE_DOWN, JUST_PRESSED) #end;
 
 	public var NOTE_UP_R(get, never):Bool;
 
 	inline function get_NOTE_UP_R()
-		return _note_upR.check();
+		return _note_upR.check() #if mobile || MobileInput.check(Control.NOTE_UP, JUST_RELEASED) #end;
 
 	public var NOTE_LEFT_R(get, never):Bool;
 
 	inline function get_NOTE_LEFT_R()
-		return _note_leftR.check();
+		return _note_leftR.check() #if mobile || MobileInput.check(Control.NOTE_LEFT, JUST_RELEASED) #end;
 
 	public var NOTE_RIGHT_R(get, never):Bool;
 
 	inline function get_NOTE_RIGHT_R()
-		return _note_rightR.check();
+		return _note_rightR.check() #if mobile || MobileInput.check(Control.NOTE_RIGHT, JUST_RELEASED) #end;
 
 	public var NOTE_DOWN_R(get, never):Bool;
 
 	inline function get_NOTE_DOWN_R()
-		return _note_downR.check();
+		return _note_downR.check() #if mobile || MobileInput.check(Control.NOTE_DOWN, JUST_RELEASED) #end;
 
 	public var DODGE(get, never):Bool;
 
 	inline function get_DODGE()
-		return _dodge.check();
+		return _dodge.check() #if mobile || MobileInput.check(Control.DODGE, JUST_PRESSED) #end;
 
 	public var ACCEPT(get, never):Bool;
 
 	inline function get_ACCEPT()
-		return _accept.check();
+		return _accept.check() #if mobile || MobileInput.check(Control.ACCEPT, JUST_PRESSED) #end;
 
 	public var BACK(get, never):Bool;
 
 	inline function get_BACK()
-		return _back.check();
+		return _back.check() #if mobile || MobileInput.check(Control.BACK, JUST_PRESSED) #end;
 
 	public var PAUSE(get, never):Bool;
 
 	inline function get_PAUSE()
-		return _pause.check();
+		return _pause.check() #if mobile || MobileInput.check(Control.PAUSE, JUST_PRESSED) #end;
 
 	public var RESET(get, never):Bool;
 
 	inline function get_RESET()
-		return _reset.check();
+		return _reset.check() #if mobile || MobileInput.check(Control.RESET, JUST_PRESSED) #end;
 
 	#if (haxe >= "4.0.0")
 	public function new(name, scheme = None)

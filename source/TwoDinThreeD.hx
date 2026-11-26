@@ -13,16 +13,15 @@ class TwoDinThreeD extends FlxShader
         uniform float xOff;
         uniform float yOff;
 
-        const vec2 offsets[9] = vec2[9](vec2(0.0, 0.0), vec2(-1.0, -1.0), vec2(0.0, -1.0), vec2(1.0, -1.0),
-        vec2(1.0, 0.0), vec2(1.0, 1.0), vec2(0.0, 1.0), vec2(-1.0, 1.0), vec2(-1.0, 0.0));
-
         void main() {
             float slope = tan(radians(tiltDeg));
             vec2 uv = openfl_TextureCoordv;
             vec4 avgCol = vec4(0.0, 0.0, 0.0, 0.0);
             vec2 step = vec2(1.0, 1.0)/(openfl_TextureSize.xy);
-            for (int i = 0; i < 9; i++) {
-                avgCol += flixel_texture2D(bitmap, uv + step * offsets[i]);
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    avgCol += flixel_texture2D(bitmap, uv + step * vec2(float(x), float(y)));
+                }
             }
             avgCol /= 9.0;
             vec4 finalCol = mix(flixel_texture2D(bitmap, uv), avgCol, blur);

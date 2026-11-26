@@ -98,8 +98,10 @@ class DSBIOSSState extends FlxState
 		mainCam = new FlxCamera(0, -600, 256, 384, 2);
 		mainCam.pixelPerfectRender = true;
 		var win = Lib.application.window; // just to make this following line shorter
-		win.move(win.x + Std.int((win.width - 512) / 2), win.y + Std.int((win.height - 768) / 2));
-		win.resize(512, 768);
+		#if desktop
+		win.move(win.x + Std.int((CoolUtil.windowWidth - 512) / 2), win.y + Std.int((CoolUtil.windowHeight - 768) / 2));
+		#end
+		CoolUtil.resizeWindow(512, 768);
 		Lib.current.x = 0;
 		Lib.current.y = 0;
 		Lib.current.scaleX = 2.5;

@@ -38,7 +38,7 @@ import flixel.math.FlxMath;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
 import flixel.system.FlxAssets.FlxShader;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
@@ -50,8 +50,7 @@ import flixel.util.FlxStringUtil;
 import flixel.util.FlxTimer;
 import haxe.Json;
 import haxe.Timer;
-import hxcodec.VideoHandler;
-import hxcodec.VideoSprite;
+import video.VideoSprite;
 import lime.app.Application;
 import lime.utils.Assets;
 import modchart.*;
@@ -757,13 +756,10 @@ class PlayState extends MusicBeatState
 	var songLength:Float = 0;
 	var timebarthing:Float;
 
-	#if desktop
-	// Discord RPC variables
 	var storyDifficultyText:String = "";
 	var detailsText:String = "";
 	var detailsPausedText:String = "";
 	var discName:String = "itsame";
-	#end
 
 	private var luaArray:Array<FunkinLua> = [];
 
@@ -837,8 +833,8 @@ class PlayState extends MusicBeatState
 		FlxG.cameras.add(camOther);
 		grpNoteSplashes = new FlxTypedGroup<NoteSplash>();
 
-		FlxCamera.defaultCameras = [camGame];
-		//if(curStage == 'piracy' && !hasDownScroll) FlxCamera.defaultCameras = [camEst];
+		CoolUtil.setDefaultCamera(camGame);
+		//if(curStage == 'piracy' && !hasDownScroll) CoolUtil.setDefaultCamera(camEst);
 		CustomFadeTransition.nextCamera = camOther;
 		// FlxG.cameras.setDefaultDrawTarget(camGame, true);
 
@@ -886,14 +882,18 @@ class PlayState extends MusicBeatState
 
 		if (curStage == 'piracy')
 		{
+			#if desktop
 			Lib.application.window.resizable = false;
+			#end
 			if(ogwinX == 0){
 				ogwinX = Lib.application.window.x;
 				ogwinY = Lib.application.window.y;
 			}
 			var win = Lib.application.window; // just to make this following line shorter
-			win.move(win.x + Std.int((win.width - 512) / 2), win.y + Std.int((win.height - 768) / 2));
-			win.resize(512, 768);
+			#if desktop
+			win.move(win.x + Std.int((CoolUtil.windowWidth - 512) / 2), win.y + Std.int((CoolUtil.windowHeight - 768) / 2));
+			#end
+			CoolUtil.resizeWindow(512, 768);
 			Lib.current.x = 0;
 			Lib.current.y = 0;
 			Lib.current.scaleX = 2.665;
@@ -913,25 +913,33 @@ class PlayState extends MusicBeatState
 
 		if (curStage == 'somari')
 		{
+			#if desktop
 			Lib.application.window.fullscreen = false;
 			Lib.application.window.resizable = false;
+			#end
 
 			if (Lib.application.window.maximized == false)
 			{
-				if (Lib.application.window.width == 1280 && Lib.application.window.height == 720)
+				if (CoolUtil.windowWidth == 1280 && CoolUtil.windowHeight == 720)
 				{
+					#if desktop
 					Lib.application.window.move(winx + 240, winy + 60);
+					#end
 				}
 			}
 			else
 			{
+				#if desktop
 				Lib.application.window.maximized = false;
 				Lib.application.window.move(560, 240);
+				#end
 			}
-			Lib.application.window.resize(800, 600);
+			CoolUtil.resizeWindow(800, 600);
 
 			stream = 1;
+			#if desktop
 			Lib.application.window.resizable = false;
+			#end
 
 			Lib.current.x = 0;
 			Lib.current.y = 0;
@@ -1311,7 +1319,7 @@ class PlayState extends MusicBeatState
 					GameOverSubstate.loopSoundName = 'GBgameover';
 					staticShader = new TVStatic();
 					var border:VCRBorder = new VCRBorder();
-					camGame.setFilters([new ShaderFilter(staticShader), new ShaderFilter(border)]);
+					camGame.filters = [new ShaderFilter(staticShader), new ShaderFilter(border)];
 					staticShader.strengthMulti.value = [0.5];
 					staticShader.imtoolazytonamethis.value = [.3];
 					
@@ -2269,7 +2277,7 @@ class PlayState extends MusicBeatState
 				add(gdRunners);
 
 				var gdRunnerRandom:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7];
-				gdRunnerRandom = FlxG.random.shuffleArray(gdRunnerRandom, 10);
+				FlxG.random.shuffle(gdRunnerRandom);
 				gdRunnerRandom.insert(gdRunnerRandom.length, 8);
 				gdRunnerRandom.insert(gdRunnerRandom.length, 9);
 				gdRunnerRandom.insert(gdRunnerRandom.length, 10);
@@ -2370,21 +2378,25 @@ class PlayState extends MusicBeatState
 				addCharacterToList('vDialog2', 1);
 				addCharacterToList('vGF2', 1);
 
+				#if desktop
 				Lib.application.window.fullscreen = true;
-				fsX = Lib.application.window.width;
-				fsY = Lib.application.window.height;
+				#end
+				fsX = CoolUtil.windowWidth;
+				fsY = CoolUtil.windowHeight;
+				#if desktop
 				Lib.application.window.fullscreen = false;
 				Lib.application.window.maximized = false;
 				Lib.application.window.resizable = false;
+				#end
 
-				ogwinsizeX = Lib.application.window.width;
-				ogwinsizeY = Lib.application.window.height;
+				ogwinsizeX = CoolUtil.windowWidth;
+				ogwinsizeY = CoolUtil.windowHeight;
 
 				ogwinX = Lib.application.window.x;
 				ogwinY = Lib.application.window.y;
 
-				PauseSubState.restsizeX = Lib.application.window.width;
-				PauseSubState.restsizeY = Lib.application.window.height;
+				PauseSubState.restsizeX = CoolUtil.windowWidth;
+				PauseSubState.restsizeY = CoolUtil.windowHeight;
 				PauseSubState.restX = Lib.application.window.x;
 				PauseSubState.restY = Lib.application.window.y;
 
@@ -2392,8 +2404,8 @@ class PlayState extends MusicBeatState
 				dupe = new CamDupeShader();
 				dupe.mult = 1;
 				angel = new AngelShader();
-				camGame.setFilters([new ShaderFilter(effect.shader), new ShaderFilter(dupe), new ShaderFilter(angel)]);
-				camHUD.setFilters([new ShaderFilter(angel)]);
+				camGame.filters = [new ShaderFilter(effect.shader), new ShaderFilter(dupe), new ShaderFilter(angel)];
+				camHUD.filters = [new ShaderFilter(angel)];
 				// trace(winx + ' and ' + winy);
 
 				var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
@@ -4030,7 +4042,7 @@ class PlayState extends MusicBeatState
 
 				// contrastFX = new BrightnessContrastShader();
 
-				// camGame.setFilters([new ShaderFilter(contrastFX)]);
+				// camGame.filters = [new ShaderFilter(contrastFX)];
 
 				// contrastFX.brightness.value = [0.5];
 				// contrastFX.contrast.value = [20.0];
@@ -4467,24 +4479,9 @@ class PlayState extends MusicBeatState
 		add(luaDebugGroup);
 		#end
 
-		#if (MODS_ALLOWED && LUA_ALLOWED)
-		var doPush:Bool = false;
-		var luaFile:String = 'stages/' + curStage + '.lua';
-		if (FileSystem.exists(Paths.modFolders(luaFile)))
-		{
-			luaFile = Paths.modFolders(luaFile);
-			doPush = true;
-		}
-		else
-		{
-			luaFile = Paths.getPreloadPath(luaFile);
-			if (FileSystem.exists(luaFile))
-			{
-				doPush = true;
-			}
-		}
-
-		if (doPush)
+		#if LUA_ALLOWED
+		var luaFile:Null<String> = Paths.findLua('stages/' + curStage + '.lua');
+		if (luaFile != null)
 			luaArray.push(new FunkinLua(luaFile));
 		#end
 
@@ -4958,16 +4955,16 @@ class PlayState extends MusicBeatState
 		#if LUA_ALLOWED
 		for (notetype in noteTypeMap.keys())
 		{
-			var luaToLoad:String = Paths.modFolders('custom_notetypes/' + notetype + '.lua');
-			if (FileSystem.exists(luaToLoad))
+			var luaToLoad:Null<String> = Paths.findLua('custom_notetypes/' + notetype + '.lua');
+			if (luaToLoad != null)
 			{
 				luaArray.push(new FunkinLua(luaToLoad));
 			}
 		}
 		for (event in eventPushedMap.keys())
 		{
-			var luaToLoad:String = Paths.modFolders('custom_events/' + event + '.lua');
-			if (FileSystem.exists(luaToLoad))
+			var luaToLoad:Null<String> = Paths.findLua('custom_events/' + event + '.lua');
+			if (luaToLoad != null)
 			{
 				luaArray.push(new FunkinLua(luaToLoad));
 			}
@@ -5606,9 +5603,9 @@ class PlayState extends MusicBeatState
 
 			if(!ClientPrefs.lowQuality){
 				badRipple = new RippleShader();
-				camGame.setFilters([new ShaderFilter(badRipple)]);
-				camHUD.setFilters([new ShaderFilter(badRipple)]);
-				camEst.setFilters([new ShaderFilter(badRipple)]);
+				camGame.filters = [new ShaderFilter(badRipple)];
+				camHUD.filters = [new ShaderFilter(badRipple)];
+				camEst.filters = [new ShaderFilter(badRipple)];
 			}
 		}
 
@@ -5650,21 +5647,21 @@ class PlayState extends MusicBeatState
 			{
 				var border:VCRBorder = new VCRBorder();
 
-				camGame.setFilters([new ShaderFilter(border)]);
-				camEst.setFilters([new ShaderFilter(border)]);
-				camHUD.setFilters([new ShaderFilter(border)]);
+				camGame.filters = [new ShaderFilter(border)];
+				camEst.filters = [new ShaderFilter(border)];
+				camHUD.filters = [new ShaderFilter(border)];
 
 				vcr = new VCRMario85();
 
-				camGame.setFilters([new ShaderFilter(vcr), new ShaderFilter(border),]);
-				camEst.setFilters([new ShaderFilter(vcr), new ShaderFilter(border),]);
-				camHUD.setFilters([new ShaderFilter(vcr), new ShaderFilter(border),]);
+				camGame.filters = [new ShaderFilter(vcr), new ShaderFilter(border),];
+				camEst.filters = [new ShaderFilter(vcr), new ShaderFilter(border),];
+				camHUD.filters = [new ShaderFilter(vcr), new ShaderFilter(border),];
 
 				if(curStage == 'nesbeat'){
 					beatend = new YCBUEndingShader();
 					angel = new AngelShader();
-					camGame.setFilters([new ShaderFilter(vcr), new ShaderFilter(border), new ShaderFilter(beatend), new ShaderFilter(angel)]);
-					camEst.setFilters([new ShaderFilter(vcr), new ShaderFilter(border), new ShaderFilter(angel)]);
+					camGame.filters = [new ShaderFilter(vcr), new ShaderFilter(border), new ShaderFilter(beatend), new ShaderFilter(angel)];
+					camEst.filters = [new ShaderFilter(vcr), new ShaderFilter(border), new ShaderFilter(angel)];
 				}
 
 				if (oldTV)
@@ -5673,20 +5670,20 @@ class PlayState extends MusicBeatState
 					{
 						oldFX = new OldTVShader();
 
-						camGame.setFilters([new ShaderFilter(vcr), new ShaderFilter(oldFX), new ShaderFilter(border)]);
-						camEst.setFilters([new ShaderFilter(vcr), new ShaderFilter(oldFX), new ShaderFilter(border)]);
-						camHUD.setFilters([new ShaderFilter(vcr), new ShaderFilter(oldFX), new ShaderFilter(border)]);
+						camGame.filters = [new ShaderFilter(vcr), new ShaderFilter(oldFX), new ShaderFilter(border)];
+						camEst.filters = [new ShaderFilter(vcr), new ShaderFilter(oldFX), new ShaderFilter(border)];
+						camHUD.filters = [new ShaderFilter(vcr), new ShaderFilter(oldFX), new ShaderFilter(border)];
 
 						contrastFX = new BrightnessContrastShader();
 
-						camGame.setFilters([new ShaderFilter(contrastFX), new ShaderFilter(vcr), new ShaderFilter(oldFX), new ShaderFilter(border)]);
+						camGame.filters = [new ShaderFilter(contrastFX), new ShaderFilter(vcr), new ShaderFilter(oldFX), new ShaderFilter(border)];
 					}
 				}
 			}
 			else if(curStage == 'wetworld'){
 				contrastFX = new BrightnessContrastShader();
 
-				camGame.setFilters([new ShaderFilter(contrastFX)]);
+				camGame.filters = [new ShaderFilter(contrastFX)];
 			}
 		}
 
@@ -5696,10 +5693,10 @@ class PlayState extends MusicBeatState
 			{
 				oldFX = new OldTVShader();
 
-				camGame.setFilters([new ShaderFilter(oldFX)]);
-				camEst.setFilters([new ShaderFilter(oldFX)]);
-				camHUD.setFilters([new ShaderFilter(oldFX)]);
-				FlxG.camera.setFilters([new ShaderFilter(oldFX)]);
+				camGame.filters = [new ShaderFilter(oldFX)];
+				camEst.filters = [new ShaderFilter(oldFX)];
+				camHUD.filters = [new ShaderFilter(oldFX)];
+				FlxG.camera.filters = [new ShaderFilter(oldFX)];
 			}
 		}
 
@@ -5756,24 +5753,9 @@ class PlayState extends MusicBeatState
 		startingSong = true;
 		updateTime = true;
 
-		#if (MODS_ALLOWED && LUA_ALLOWED)
-		var doPush:Bool = false;
-		var luaFile:String = 'data/songData/' + Paths.formatToSongPath(SONG.song) + '/script.lua';
-		if (FileSystem.exists(Paths.modFolders(luaFile)))
-		{
-			luaFile = Paths.modFolders(luaFile);
-			doPush = true;
-		}
-		else
-		{
-			luaFile = Paths.getPreloadPath(luaFile);
-			if (FileSystem.exists(luaFile))
-			{
-				doPush = true;
-			}
-		}
-
-		if (doPush)
+		#if LUA_ALLOWED
+		var luaFile:Null<String> = Paths.findLua('data/songData/' + Paths.formatToSongPath(SONG.song) + '/script.lua');
+		if (luaFile != null)
 			luaArray.push(new FunkinLua(luaFile));
 		#end
 
@@ -5898,6 +5880,9 @@ class PlayState extends MusicBeatState
 		// Updating Discord Rich Presence.
 		DiscordClient.changePresence(detailsText, newName + legacycheck, discName.toLowerCase(), iconP2.getCharacter().toLowerCase());
 		#end
+
+		addHitbox(curStage == 'turmoilsweep' || curStage == 'castlestar');
+		addPauseButton();
 
 		callOnLuas('onCreatePost', []);
 
@@ -6124,23 +6109,8 @@ class PlayState extends MusicBeatState
 	function startCharacterLua(name:String)
 	{
 		#if LUA_ALLOWED
-		var doPush:Bool = false;
-		var luaFile:String = 'characters/' + name + '.lua';
-		if (FileSystem.exists(Paths.modFolders(luaFile)))
-		{
-			luaFile = Paths.modFolders(luaFile);
-			doPush = true;
-		}
-		else
-		{
-			luaFile = Paths.getPreloadPath(luaFile);
-			if (FileSystem.exists(luaFile))
-			{
-				doPush = true;
-			}
-		}
-
-		if (doPush)
+		var luaFile:Null<String> = Paths.findLua('characters/' + name + '.lua');
+		if (luaFile != null)
 		{
 			for (lua in luaArray)
 			{
@@ -6700,7 +6670,7 @@ class PlayState extends MusicBeatState
 
 		var songName:String = Paths.formatToSongPath(SONG.song);
 		var file:String = Paths.json('songData/' + songName + '/events');
-		#if sys
+		#if MODS_ALLOWED
 		if (FileSystem.exists(Paths.modsJson('songData/' + songName + '/events')) || FileSystem.exists(file))
 		{
 		#else
@@ -7449,7 +7419,7 @@ class PlayState extends MusicBeatState
 				bftors.visible = bfext.visible = !(bftorsmiss.visible = bfextmiss.visible = boyfriend.animation.curAnim.name.endsWith('miss'));
 				if(warioDead){
 					//apparition game over confirm/exit
-					if(controls.ACCEPT){
+					if(controls.ACCEPT || touchTapped()){
 						FlxG.sound.music.volume = 0;
 						FlxG.sound.play(Paths.music(GameOverSubstate.endSoundName));
 						new FlxTimer().start(2, function(gef:FlxTimer)
@@ -7552,7 +7522,7 @@ class PlayState extends MusicBeatState
 			}
 		}
 
-		if (FlxG.keys.justPressed.ENTER && startedCountdown && canPause)
+		if ((FlxG.keys.justPressed.ENTER #if mobile || controls.PAUSE #end) && startedCountdown && canPause)
 		{
 			var ret:Dynamic = callOnLuas('onPause', []);
 			if (ret != FunkinLua.Function_Stop)
@@ -7592,7 +7562,7 @@ class PlayState extends MusicBeatState
 				#end
 			}
 		}
-		else if(FlxG.keys.justPressed.ENTER && inCutscene && cutVid != null && SONG.song.toLowerCase() != 'demise'){
+		else if((FlxG.keys.justPressed.ENTER #if mobile || controls.PAUSE #end) && inCutscene && cutVid != null && SONG.song.toLowerCase() != 'demise'){
 			finishVideo();
 			cutVid.bitmap.stop();
 		}
@@ -7621,12 +7591,16 @@ class PlayState extends MusicBeatState
 
 		if (startwindow)
 		{
+			#if desktop
 			Lib.application.window.move(winx, winy);
+			#end
 		}
 		else if (startresize)
 		{
-			Lib.application.window.resize(resizex, resizey);
+			CoolUtil.resizeWindow(resizex, resizey);
+			#if desktop
 			Lib.application.window.move(winx, winy);
+			#end
 		}
 
 		if (PlayState.SONG.song == 'Oh God No')
@@ -9519,7 +9493,7 @@ class PlayState extends MusicBeatState
 					eventTweens.push(FlxTween.tween(camGame, {zoom: 1.3}, 5, {ease: FlxEase.sineIn}));
 					if (!ClientPrefs.lowQuality){
 						effect.setStrength(40, 40);
-						camGame.setFilters([new ShaderFilter(effect.shader)]);
+						camGame.filters = [new ShaderFilter(effect.shader)];
 						FlxTween.num(1, 20, 3, function(v)
 						{
 							effect.setStrength(v, v);
@@ -13653,7 +13627,9 @@ class PlayState extends MusicBeatState
 								}
 							CppAPI.restoreWindows();
 							startresize = true;
+							#if desktop
 							Lib.application.window.borderless = false;
+							#end
 
 							if (!ClientPrefs.hideTime)
 							{
@@ -13672,8 +13648,10 @@ class PlayState extends MusicBeatState
 								onComplete: function(twn:FlxTween)
 								{
 									startresize = false;
-									Lib.application.window.resize(resizex, resizey);
+									CoolUtil.resizeWindow(resizex, resizey);
+									#if desktop
 									Lib.application.window.move(winx, winy);
+									#end
 								}
 							}));
 							virtuabg.alpha = 0;
@@ -15761,31 +15739,41 @@ class PlayState extends MusicBeatState
 		}
 		luaArray = [];
 		super.destroy();
-			if (Lib.application.window.width == 800 && Lib.application.window.height == 600)
+			if (CoolUtil.windowWidth == 800 && CoolUtil.windowHeight == 600)
 			{
+				#if desktop
 				Lib.application.window.move(Lib.application.window.x - 240, Lib.application.window.y - 60);
-				Lib.application.window.resize(1280, 720);
+				#end
+				CoolUtil.resizeWindow(1280, 720);
 			}
 			else if (PlayState.curStage == 'piracy')
 			{
-				Lib.application.window.resize(1280, 720);
+				CoolUtil.resizeWindow(1280, 720);
+				#if desktop
 				Lib.application.window.move(PlayState.ogwinX, PlayState.ogwinY);
+				#end
 			}
 			if (PlayState.curStage == 'somari')
 			{
-				Lib.application.window.resize(1280, 720);
+				CoolUtil.resizeWindow(1280, 720);
+				#if desktop
 				Lib.application.window.resizable = true;
 				Lib.application.window.fullscreen = false;
 				Lib.application.window.maximized = false;
+				#end
 			}
 			if (PlayState.curStage == 'virtual')
 			{
+				#if desktop
 				Lib.application.window.resizable = true;
 				Lib.application.window.maximized = false;
 				Lib.application.window.borderless = false;
+				#end
 
-				Lib.application.window.resize(PauseSubState.restsizeX, PauseSubState.restsizeY);
+				CoolUtil.resizeWindow(PauseSubState.restsizeX, PauseSubState.restsizeY);
+				#if desktop
 				Lib.application.window.move(PauseSubState.restX, PauseSubState.restY);
+				#end
 				CppAPI.restoreWindows();
 				CppAPI.setWallpaper('old');
 			}
@@ -15929,9 +15917,13 @@ class PlayState extends MusicBeatState
 						{
 							CppAPI.setTransparency(Lib.application.window.title, 0x001957);
 							startresize = false;
+							#if desktop
 							Lib.application.window.borderless = false;
-							Lib.application.window.resize(fsX, fsY);
+							#end
+							CoolUtil.resizeWindow(fsX, fsY);
+							#if desktop
 							Lib.application.window.move(0, 0);
+							#end
 						}
 					}));
 			}

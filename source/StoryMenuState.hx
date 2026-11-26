@@ -19,8 +19,7 @@ import flixel.tweens.FlxTween;
 import flixel.tweens.misc.NumTween;
 import flixel.util.FlxColor;
 import flixel.util.FlxTimer;
-import hxcodec.VideoHandler;
-import hxcodec.VideoSprite;
+import video.VideoSprite;
 import lime.net.curl.CURLCode;
 import openfl.filters.ShaderFilter;
 import sys.FileSystem;
@@ -134,7 +133,7 @@ class StoryMenuState extends MusicBeatSubstate
 
 		if(ClientPrefs.storySave[0]) titleText.text = "Includes\nIt's-a-me\nStarman Slaughter";
 
-		startText = new FlxText(800, 600, 400, "Press Enter to Begin", 32);
+		startText = new FlxText(800, 600, 400, #if mobile "Tap Here to Begin" #else "Press Enter to Begin" #end, 32);
 		startText.setFormat(Paths.font("mariones.ttf"), 24, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		startText.scrollFactor.set(1, 1);
 		startText.updateHitbox();
@@ -182,7 +181,7 @@ class StoryMenuState extends MusicBeatSubstate
 		overlay.alpha = 0;
 		add(overlay);
 		
-		@:privateAccess FlxG.camera._filters.insert(0, new ShaderFilter(staticShader = new TVStatic()));
+		@:privateAccess FlxG.camera.filters.insert(0, new ShaderFilter(staticShader = new TVStatic()));
 		staticShader.strengthMulti.value = [0.5];
 		staticShader.imtoolazytonamethis.value = [.3];
 
@@ -210,6 +209,8 @@ class StoryMenuState extends MusicBeatSubstate
 		FlxTween.tween(cutText, {alpha: 1}, 4, {ease: FlxEase.expoOut});
 		FlxTween.tween(overlay, {alpha: .4}, 4, {ease: FlxEase.expoOut});
 
+		addBackButton();
+
 		super.create();
 	}
 
@@ -232,13 +233,15 @@ class StoryMenuState extends MusicBeatSubstate
 	override function update(elapsed:Float)
 	{
 		tottalTimer += elapsed;
-		if (controls.ACCEPT && quieto)
+		if ((controls.ACCEPT || (startText.visible && touchTapped(startText))) && quieto)
 		{
 			selectWeek();
 		}
-		else if(controls.ACCEPT && inCutscene){
-			finishVideo();
+		else if((controls.ACCEPT || touchTapped()) && inCutscene){
+			inCutscene = false;
+			vid.finishCallback = null;
 			vid.bitmap.stop();
+			finishVideo();
 		}
 
 		charsShader.update(elapsed);
@@ -412,6 +415,7 @@ class StoryMenuState extends MusicBeatSubstate
 		}
 
 	public function finishVideo():Void{
+		inCutscene = false;
 		FlxG.camera.filtersEnabled = true;
 		vid.destroy();
 		new FlxTimer().start(1, function(tmr:FlxTimer)

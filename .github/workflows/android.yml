@@ -1,0 +1,117 @@
+name: Android Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/share/boost /usr/local/.ghcup
+          df -h /
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.3.7
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r21e
+
+      - name: Restore Haxelib Cache
+        id: cache-haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-${{ runner.os }}-${{ hashFiles('.github/workflows/android.yml') }}
+
+      - name: Restore Build Cache
+        uses: actions/cache@v4
+        with:
+          path: export/release/android/obj
+          key: hxcpp-${{ runner.os }}-${{ hashFiles('.github/workflows/android.yml', 'Project.xml') }}-${{ github.sha }}
+          restore-keys: |
+            hxcpp-${{ runner.os }}-${{ hashFiles('.github/workflows/android.yml', 'Project.xml') }}-
+
+      - name: Restore Gradle Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('.github/workflows/android.yml') }}
+
+      - name: Setup Haxelib
+        run: haxelib setup ~/haxelib
+
+      - name: Install Haxelibs
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
+        run: |
+          haxelib install hxcpp 4.3.2 --quiet
+          haxelib install lime 8.3.2 --quiet
+          haxelib install openfl 9.5.2 --quiet
+          haxelib install flixel 6.2.1 --quiet
+          haxelib install flixel-addons 4.0.1 --quiet
+          haxelib install hscript --quiet
+          haxelib git flixel-ui https://github.com/HaxeFlixel/flixel-ui ff2f30148cb1a7c9b10373aa89cf1e0d7aafb648 --quiet
+          haxelib git hxvlc https://github.com/MAJigsaw77/hxvlc 31ae19f29f02bbf68b5cf73c0c7c652be674aab3 --quiet
+          haxelib git linc_luajit https://github.com/superpowers04/linc_luajit daf0664aee99aa8b8d6bdd1eda993a1c3a399067 --quiet
+          haxelib git android-manager https://github.com/BrenninhoTools/android-manager --quiet
+
+      - name: List Haxelibs
+        run: haxelib list
+
+      - name: Configure Android
+        run: |
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.setup-ndk.outputs.ndk-path }}
+          haxelib run lime config JAVA_HOME $JAVA_HOME
+          haxelib run lime config ANDROID_SETUP true
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
+
+      - name: Build
+        run: haxelib run lime build android -final
+
+      - name: Sign APK
+        run: |
+          BUILD_TOOLS=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
+          APK=$(find export/release/android/bin/app/build/outputs/apk -name "*.apk" | head -1)
+          keytool -genkeypair -keystore ci.keystore -storepass mariomadnessci -keypass mariomadnessci -alias mariomadness -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Mario Madness"
+          $BUILD_TOOLS/zipalign -f -p 4 "$APK" aligned.apk
+          rm -f "$APK"
+          mkdir -p output
+          $BUILD_TOOLS/apksigner sign --ks ci.keystore --ks-pass pass:mariomadnessci --key-pass pass:mariomadnessci --out output/MarioMadness.apk aligned.apk
+          rm -f aligned.apk
+          $BUILD_TOOLS/apksigner verify output/MarioMadness.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarioMadness-Android
+          path: output/MarioMadness.apk
+          compression-level: 0
+          if-no-files-found: error

@@ -1,7 +1,9 @@
 package;
 
 import Controls;
+#if desktop
 import discord_rpc.DiscordRpc;
+#end
 import flash.text.TextField;
 import flash.text.TextField;
 import flixel.FlxG;
@@ -34,7 +36,7 @@ import Discord.DiscordClient;
 // Yeah seems like a reasonable goal to me
 class MMOptions extends MusicBeatSubstate
 {
-	var options:Array<String> = ['Notes', 'Controls', 'Preferences', 'Mario Options', 'Delete Data'];
+	var options:Array<String> = ['Notes', #if !mobile 'Controls', #end 'Preferences', 'Mario Options', 'Delete Data'];
 	private var grpOptions:FlxTypedGroup<FlxText>;
 
 	private static var curSelected:Int = 0;
@@ -88,6 +90,9 @@ class MMOptions extends MusicBeatSubstate
 		verText.alpha = 0; verText.y += 20;
 		FlxTween.tween(verText, {y: verText.y - 20, alpha: 1}, 1, {ease: FlxEase.circOut, startDelay: .5});
 
+		enableTouchMenu();
+		addBackButton();
+
 		super.create();
 	}
 
@@ -102,14 +107,16 @@ class MMOptions extends MusicBeatSubstate
 	{
 		super.update(elapsed);
 
-		if (FlxG.keys.justPressed.UP)
+		if ((FlxG.keys.justPressed.UP #if mobile || controls.UI_UP_P #end))
 		{
 			changeSelection(-1);
 		}
-		if (FlxG.keys.justPressed.DOWN)
+		if ((FlxG.keys.justPressed.DOWN #if mobile || controls.UI_DOWN_P #end))
 		{
 			changeSelection(1);
 		}
+
+		touchList(grpOptions.members, curSelected, changeSelection);
 
 		if (controls.BACK)
 		{
@@ -227,6 +234,11 @@ class NotesSubstate extends MusicBeatSubstate
 		hsvText.size = 18;
 		add(hsvText);
 		changeSelection();
+
+		enableTouchMenu();
+		addBackButton();
+		addTouchArrows();
+		setTouchArrowsVisible(false);
 	}
 
 	var changingNote:Bool = false;
@@ -234,16 +246,24 @@ class NotesSubstate extends MusicBeatSubstate
 
 	override function update(elapsed:Float)
 	{
+		setTouchArrowsVisible(changingNote);
+		if (!changingNote)
+			touchList(grpNotes.members, curSelected, function(change:Int)
+			{
+				changeSelection(change);
+				FlxG.sound.play(Paths.sound('scrollMenu'));
+			});
+
 		if (changingNote)
 		{
 			if (holdTime < 0.5)
 			{
-				if (FlxG.keys.justPressed.LEFT)
+				if ((FlxG.keys.justPressed.LEFT #if mobile || controls.UI_LEFT_P #end))
 				{
 					updateValue(-1);
 					FlxG.sound.play(Paths.sound('scrollMenu'));
 				}
-				else if (FlxG.keys.justPressed.RIGHT)
+				else if ((FlxG.keys.justPressed.RIGHT #if mobile || controls.UI_RIGHT_P #end))
 				{
 					updateValue(1);
 					FlxG.sound.play(Paths.sound('scrollMenu'));
@@ -253,11 +273,11 @@ class NotesSubstate extends MusicBeatSubstate
 					resetValue(curSelected, typeSelected);
 					FlxG.sound.play(Paths.sound('scrollMenu'));
 				}
-				if (FlxG.keys.justReleased.RIGHT || FlxG.keys.justReleased.RIGHT)
+				if ((FlxG.keys.justReleased.LEFT #if mobile || controls.UI_LEFT_R #end) || (FlxG.keys.justReleased.RIGHT #if mobile || controls.UI_RIGHT_R #end))
 				{
 					holdTime = 0;
 				}
-				else if (FlxG.keys.pressed.LEFT || FlxG.keys.pressed.RIGHT)
+				else if ((FlxG.keys.pressed.LEFT #if mobile || controls.UI_LEFT #end) || (FlxG.keys.pressed.RIGHT #if mobile || controls.UI_RIGHT #end))
 				{
 					holdTime += elapsed;
 				}
@@ -270,15 +290,15 @@ class NotesSubstate extends MusicBeatSubstate
 					case 1 | 2:
 						add = 50;
 				}
-				if (FlxG.keys.pressed.LEFT)
+				if ((FlxG.keys.pressed.LEFT #if mobile || controls.UI_LEFT #end))
 				{
 					updateValue(elapsed * -add);
 				}
-				else if (FlxG.keys.pressed.RIGHT)
+				else if ((FlxG.keys.pressed.RIGHT #if mobile || controls.UI_RIGHT #end))
 				{
 					updateValue(elapsed * add);
 				}
-				if (FlxG.keys.justReleased.RIGHT || FlxG.keys.justReleased.RIGHT)
+				if ((FlxG.keys.justReleased.LEFT #if mobile || controls.UI_LEFT_R #end) || (FlxG.keys.justReleased.RIGHT #if mobile || controls.UI_RIGHT_R #end))
 				{
 					FlxG.sound.play(Paths.sound('scrollMenu'));
 					holdTime = 0;
@@ -287,22 +307,22 @@ class NotesSubstate extends MusicBeatSubstate
 		}
 		else
 		{
-			if (FlxG.keys.justPressed.UP)
+			if ((FlxG.keys.justPressed.UP #if mobile || controls.UI_UP_P #end))
 			{
 				changeSelection(-1);
 				FlxG.sound.play(Paths.sound('scrollMenu'));
 			}
-			if (FlxG.keys.justPressed.DOWN)
+			if ((FlxG.keys.justPressed.DOWN #if mobile || controls.UI_DOWN_P #end))
 			{
 				changeSelection(1);
 				FlxG.sound.play(Paths.sound('scrollMenu'));
 			}
-			if (FlxG.keys.justPressed.LEFT)
+			if ((FlxG.keys.justPressed.LEFT #if mobile || controls.UI_LEFT_P #end))
 			{
 				changeType(-1);
 				FlxG.sound.play(Paths.sound('scrollMenu'));
 			}
-			if (FlxG.keys.justPressed.RIGHT)
+			if ((FlxG.keys.justPressed.RIGHT #if mobile || controls.UI_RIGHT_P #end))
 			{
 				changeType(1);
 				FlxG.sound.play(Paths.sound('scrollMenu'));
@@ -372,7 +392,7 @@ class NotesSubstate extends MusicBeatSubstate
 			}
 		}
 
-		if (controls.BACK || (changingNote && controls.ACCEPT))
+		if (controls.BACK || (changingNote && (controls.ACCEPT || touchTapped())))
 		{
 			changeSelection();
 			if (!changingNote)
@@ -821,7 +841,7 @@ class PreferencesSubstate extends MusicBeatSubstate
 {
 	private static var curSelected:Int = 0;
 	static var unselectableOptions:Array<String> = ['GRAPHICS', 'GAMEPLAY'];
-	static var noCheckbox:Array<String> = ['Framerate', 'Note Delay'];
+	static var noCheckbox:Array<String> = ['Framerate', 'Note Delay', 'Hitbox Opacity'];
 
 	static var options:Array<String> = [
 		'GRAPHICS',
@@ -840,8 +860,9 @@ class PreferencesSubstate extends MusicBeatSubstate
 		'Hide HUD',
 		'Hide Song Length',
 		'Flashing Lights',
-		'Camera Zooms'
-		#if !mobile, 'FPS Counter' #end
+		'Camera Zooms',
+		'FPS Counter'
+		#if mobile, 'Hitbox Opacity' #end
 	];
 
 	private var grpOptions:FlxTypedGroup<Alphabet>;
@@ -935,6 +956,16 @@ class PreferencesSubstate extends MusicBeatSubstate
 		}
 		changeSelection();
 		reloadValues();
+
+		enableTouchMenu();
+		addBackButton();
+		addTouchArrows();
+		updateTouchArrows();
+	}
+
+	function updateTouchArrows():Void
+	{
+		setTouchArrowsVisible(noCheckbox.contains(options[curSelected]));
 	}
 
 	var nextAccept:Int = 5;
@@ -942,15 +973,17 @@ class PreferencesSubstate extends MusicBeatSubstate
 
 	override function update(elapsed:Float)
 	{
-		if (FlxG.keys.justPressed.UP)
+		if ((FlxG.keys.justPressed.UP #if mobile || controls.UI_UP_P #end))
 		{
 			changeSelection(-1);
 		}
 
-		if (FlxG.keys.justPressed.DOWN)
+		if ((FlxG.keys.justPressed.DOWN #if mobile || controls.UI_DOWN_P #end))
 		{
 			changeSelection(1);
 		}
+
+		touchList(grpOptions.members, curSelected, changeSelection);
 
 		if (controls.BACK)
 		{
@@ -1056,10 +1089,10 @@ class PreferencesSubstate extends MusicBeatSubstate
 		}
 		else
 		{
-			if (FlxG.keys.pressed.LEFT || FlxG.keys.pressed.RIGHT)
+			if ((FlxG.keys.pressed.LEFT #if mobile || controls.UI_LEFT #end) || (FlxG.keys.pressed.RIGHT #if mobile || controls.UI_RIGHT #end))
 			{
-				var add:Int = FlxG.keys.pressed.LEFT ? -1 : 1;
-				if (holdTime > 0.5 || FlxG.keys.justPressed.LEFT || FlxG.keys.justPressed.RIGHT)
+				var add:Int = (FlxG.keys.pressed.LEFT #if mobile || controls.UI_LEFT #end) ? -1 : 1;
+				if (holdTime > 0.5 || (FlxG.keys.justPressed.LEFT #if mobile || controls.UI_LEFT_P #end) || (FlxG.keys.justPressed.RIGHT #if mobile || controls.UI_RIGHT_P #end))
 					switch (options[curSelected])
 					{
 						case 'Framerate':
@@ -1090,6 +1123,8 @@ class PreferencesSubstate extends MusicBeatSubstate
 								ClientPrefs.noteOffset = 0;
 							else if (ClientPrefs.noteOffset > 500)
 								ClientPrefs.noteOffset = 500;
+						case 'Hitbox Opacity':
+							ClientPrefs.hitboxAlpha = Math.round(Math.max(0, Math.min(1, ClientPrefs.hitboxAlpha + add * 0.05)) * 100) / 100;
 					}
 				reloadValues();
 
@@ -1164,6 +1199,8 @@ class PreferencesSubstate extends MusicBeatSubstate
 				daText = "If checked, hides most HUD elements.";
 			case 'Hide Song Length':
 				daText = "If checked, the bar showing how much time is left\nwill be hidden.";
+			case 'Hitbox Opacity':
+				daText = "How visible the touch lanes are when pressed.\nSet it to 0% to hide them.";
 		}
 		descText.text = daText;
 
@@ -1207,6 +1244,7 @@ class PreferencesSubstate extends MusicBeatSubstate
 		}
 
 		showCharacter.visible = (options[curSelected] == 'Anti-Aliasing');
+		updateTouchArrows();
 		FlxG.sound.play(Paths.sound('scrollMenu'));
 	}
 
@@ -1264,6 +1302,8 @@ class PreferencesSubstate extends MusicBeatSubstate
 						daText = '' + ClientPrefs.framerate;
 					case 'Note Delay':
 						daText = ClientPrefs.noteOffset + 'ms';
+					case 'Hitbox Opacity':
+						daText = Math.round(ClientPrefs.hitboxAlpha * 100) + '%';
 				}
 				var lastTracker:FlxSprite = text.sprTracker;
 				text.sprTracker = null;
@@ -1297,8 +1337,8 @@ class MarioSubstate extends MusicBeatSubstate
 		'Enable TV Effect',
 		'Enable Resume Wait',
 		'Menu BG',
-		'Enable Mr Virtual Mechanics',
-		'Enable Discord Rich Presence'
+		'Enable Mr Virtual Mechanics'
+		#if desktop, 'Enable Discord Rich Presence' #end
 	];
 
 	static var bglist:Array<String> = [
@@ -1409,6 +1449,16 @@ class MarioSubstate extends MusicBeatSubstate
 		}
 		changeSelection();
 		reloadValues();
+
+		enableTouchMenu();
+		addBackButton();
+		addTouchArrows();
+		updateTouchArrows();
+	}
+
+	function updateTouchArrows():Void
+	{
+		setTouchArrowsVisible(noCheckbox.contains(options[curSelected]));
 	}
 
 	var nextAccept:Int = 5;
@@ -1416,14 +1466,16 @@ class MarioSubstate extends MusicBeatSubstate
 
 	override function update(elapsed:Float)
 	{
-		if (FlxG.keys.justPressed.UP)
+		if ((FlxG.keys.justPressed.UP #if mobile || controls.UI_UP_P #end))
 		{
 			changeSelection(-1);
 		}
-		if (FlxG.keys.justPressed.DOWN)
+		if ((FlxG.keys.justPressed.DOWN #if mobile || controls.UI_DOWN_P #end))
 		{
 			changeSelection(1);
 		}
+
+		touchList(grpOptions.members, curSelected, changeSelection);
 
 		if (controls.BACK)
 		{
@@ -1464,6 +1516,7 @@ class MarioSubstate extends MusicBeatSubstate
 						ClientPrefs.noVirtual = !ClientPrefs.noVirtual;
 					case 'Enable Discord Rich Presence':
 						ClientPrefs.noDiscord = !ClientPrefs.noDiscord;
+						#if desktop
 						if (ClientPrefs.noDiscord)
 						{
 							DiscordClient.start();
@@ -1472,15 +1525,16 @@ class MarioSubstate extends MusicBeatSubstate
 						{
 							DiscordClient.shutdown();
 						}
+						#end
 				}
 				FlxG.sound.play(Paths.sound('scrollMenu'));
 				reloadValues();
 			}
 			else
 				{
-					if (FlxG.keys.justPressed.LEFT || FlxG.keys.justPressed.RIGHT)
+					if ((FlxG.keys.justPressed.LEFT #if mobile || controls.UI_LEFT_P #end) || (FlxG.keys.justPressed.RIGHT #if mobile || controls.UI_RIGHT_P #end))
 					{
-						var add:Int = FlxG.keys.justPressed.LEFT ? -1 : 1;
+						var add:Int = (FlxG.keys.justPressed.LEFT #if mobile || controls.UI_LEFT_P #end) ? -1 : 1;
 							switch (options[curSelected])
 							{
 								case 'Menu BG':
@@ -1570,6 +1624,7 @@ class MarioSubstate extends MusicBeatSubstate
 			}
 		}
 		FlxG.sound.play(Paths.sound('scrollMenu'));
+		updateTouchArrows();
 	}
 
 	function reloadValues()
@@ -1645,7 +1700,7 @@ class DeleteSubstate extends MusicBeatSubstate
 			darkbg.alpha = 0.2;
 			add(darkbg);
 
-			text = new FlxText(0, 0, 1000, 'Do you want to delete all your progress?\n\n\nPress Enter to continue', 32);
+			text = new FlxText(0, 0, 1000, 'Do you want to delete all your progress?\n\n\n' + #if mobile 'Tap the screen to continue' #else 'Press Enter to continue' #end, 32);
 			text.setFormat(Paths.font("mariones.ttf"), 36, FlxColor.RED, "center", FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			text.screenCenter(XY);
 			add(text);
@@ -1664,6 +1719,7 @@ class DeleteSubstate extends MusicBeatSubstate
 			rotButton.visible = false;
 			add(rotButton);
 
+			addBackButton();
 		}
 
 	override function update(elapsed:Float)
@@ -1680,16 +1736,16 @@ class DeleteSubstate extends MusicBeatSubstate
 					close();
 				}
 			
-			if(controls.ACCEPT && delPhase <= 3 && timer == 0 && cat.angle == 0){
+			if((controls.ACCEPT || (touchTapped() && !(rotButton.visible && touchTapped(rotButton)))) && delPhase <= 3 && timer == 0 && cat.angle == 0){
 				switch(delPhase){
 					case 0:
 						timer = 1;
-						text.text = 'to make it clear, you will lose all your progress in the mod\n\nPress enter if you REALLY want to delete it';
+						text.text = 'to make it clear, you will lose all your progress in the mod\n\n' + #if mobile 'Tap the screen' #else 'Press enter' #end + ' if you REALLY want to delete it';
 						text.screenCenter(XY);
 					case 1:
 						FlxG.mouse.visible = true;
 						timer = 1;
-						text.text = 'Rotate the cat to the right direction and press enter if you are going to delete your progress';
+						text.text = 'Rotate the cat to the right direction and ' + #if mobile 'tap the screen' #else 'press enter' #end + ' if you are going to delete your progress';
 						text.y = 100;
 						cat.angle = 90 * FlxG.random.int(1, 3);
 						cat.visible = true;
@@ -1698,7 +1754,7 @@ class DeleteSubstate extends MusicBeatSubstate
 						FlxG.mouse.visible = false;
 						timer = 1;
 						text.y = 0;
-						text.text = 'Press enter For real this time to delete your progress';
+						text.text = #if mobile 'Tap the screen' #else 'Press enter' #end + ' For real this time to delete your progress';
 						text.screenCenter(XY);
 						cat.visible = false;
 						rotButton.visible = false;

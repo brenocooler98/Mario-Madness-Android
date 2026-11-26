@@ -188,6 +188,22 @@ class Paths
 		return getPath('$key.lua', TEXT, library);
 	}
 
+	public static function findLua(file:String):Null<String>
+	{
+		#if MODS_ALLOWED
+		if (FileSystem.exists(modFolders(file)))
+			return modFolders(file);
+		#end
+		var path:String = getPreloadPath(file);
+		#if sys
+		if (FileSystem.exists(path))
+			return path;
+		#end
+		if (OpenFlAssets.exists(path, TEXT))
+			return path;
+		return null;
+	}
+
 	static public function video(key:String)
 	{
 		#if MODS_ALLOWED
@@ -196,7 +212,7 @@ class Paths
 			return file;
 		}
 		#end
-		return 'assets/videos/$key.$VIDEO_EXT';
+		return #if android 'videos:' + #end 'assets/videos/$key.$VIDEO_EXT';
 	}
 
 	static public function sound(key:String, ?library:String):Sound

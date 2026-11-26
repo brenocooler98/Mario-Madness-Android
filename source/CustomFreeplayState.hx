@@ -136,6 +136,8 @@ class CustomFreeplayState extends MusicBeatSubstate
 		//FlxTween.color(MainMenuState.instance.estatica, .8, MainMenuState.instance.estatica.color, 0xFF5E1515);
 
 		FlxG.state.persistentDraw = true;
+
+		addBackButton();
 	}
 
 	override function closeSubState()
@@ -171,7 +173,7 @@ class CustomFreeplayState extends MusicBeatSubstate
 				}
 			}
 
-			if(FlxG.mouse.justPressed && FlxG.mouse.overlaps(spr)){
+			if(clicked(spr)){
 				goToState();
 			}
 		});
@@ -436,6 +438,9 @@ class FreeplaySubState extends MusicBeatSubstate
 		cartel.alpha = 0;
 		tween = FlxTween.tween(descText, {alpha: 1}, 0.3, {ease: FlxEase.quadOut});
 		tween = FlxTween.tween(cartel, {alpha: 1}, 0.3, {ease: FlxEase.quadOut});
+
+		enableTouchMenu();
+		addBackButton();
 	}
 
 	var quieto:Bool = false;
@@ -464,7 +469,7 @@ class FreeplaySubState extends MusicBeatSubstate
 			var cosowea:Int;
 			cosowea = curSelected;
 
-			if (FlxG.mouse.justPressed && FlxG.mouse.overlaps(checkLeft) && !quieto)
+			if (clicked(checkLeft) && !quieto)
 			{
 				changeSelection(-1);
 				caminar();
@@ -474,7 +479,7 @@ class FreeplaySubState extends MusicBeatSubstate
 				FlxTween.cancelTweensOf(arrowL.scale);
 				FlxTween.tween(arrowL.scale, {x: 0.6, y: 0.6}, 0.5, {ease: FlxEase.expoOut});
 			}
-			else if (FlxG.mouse.justPressed && FlxG.mouse.overlaps(checkRight) && !quieto)
+			else if (clicked(checkRight) && !quieto)
 			{
 				changeSelection(1);
 				caminar();
@@ -484,7 +489,7 @@ class FreeplaySubState extends MusicBeatSubstate
 				FlxTween.cancelTweensOf(arrowR.scale);
 				FlxTween.tween(arrowR.scale, {x: 0.6, y: 0.6}, 0.5, {ease: FlxEase.expoOut});
 			}
-			else if (FlxG.mouse.justPressed && !quieto)
+			else if (clicked() && !quieto)
 			{
 				goToSong();
 			}

@@ -2,7 +2,8 @@
 <project>
 	<!-- _________________________ Application Settings _________________________ -->
 
-	<app title="Friday Night Funkin': Mario's Madness" file="Mario" packageName="com.shadowmario.psychengine" package="com.shadowmario.psychengine" main="Main" version="2.0.1" company="ShadowMario" />
+	<app title="Friday Night Funkin': Mario's Madness" file="Mario" packageName="com.shadowmario.psychengine" package="com.shadowmario.psychengine" main="Main" version="2.0.1" company="ShadowMario" unless="android" />
+	<app title="FNF: Mario Madness" file="MarioMadness" packageName="com.mariomadness.breno" package="com.mariomadness.breno" main="Main" version="2.0.1" company="Brenninho" if="android" />
 	
 	<!--Switch Export with Unique ApplicationID and Icon-->
 	<set name="APP_ID" value="0x0100f6c013bbc000" />
@@ -18,7 +19,7 @@
 	<!-- ____________________________ Window Settings ___________________________ -->
 	
 	<!--These window settings apply to all targets-->
-	<window width="1280" height="720" fps="" background="#000000" hardware="true" vsync="false" />
+	<window width="1280" height="720" fps="60" background="#000000" hardware="true" vsync="false" />
 	
 	<!--HTML5-specific-->
 	<window if="html5" resizable="true" />
@@ -27,7 +28,11 @@
 	<window if="desktop" orientation="landscape" fullscreen="false" resizable="true" vsync="false"/>
 	
 	<!--Mobile-specific-->
-	<window if="mobile" orientation="landscape" fullscreen="true" width="0" height="0" resizable="false"/>
+	<window if="mobile" orientation="landscape" fullscreen="true" width="0" height="0" resizable="false" allow-shaders="true" require-shaders="true" />
+
+	<architecture name="arm64" if="android" />
+	<architecture exclude="armv7" if="android" />
+	<architecture exclude="x86" if="android" />
 	
 	<!--Switch-specific-->
 	<window if="switch" orientation="landscape" fullscreen="true" width="0" height="0" resizable="true" />
@@ -45,28 +50,36 @@
 	
 	<!-- PSYCH ENGINE CUSTOMIZATION -->
 	<define name="MODS_ALLOWED" if="desktop" />
-	<define name="LUA_ALLOWED" if="windows" />
-	<define name="VIDEOS_ALLOWED" if="web || windows" unless="32"/>
+	<define name="LUA_ALLOWED" if="windows || android" />
+	<define name="VIDEOS_ALLOWED" if="windows || android" unless="32"/>
 	
 	<!-- <define name="PRELOAD_ALL" /> -->
 	<define name="PRELOAD_ALL" unless="web" />
 	<define name="NO_PRELOAD_ALL" unless="PRELOAD_ALL"/>
 	
-	<library name="videos"        preload="true" />
-	<section if="PRELOAD_ALL">
-		<library name="songs"         preload="true" />
-		<library name="shared"        preload="true" />
+	<define name="LAZY_LIBRARIES" if="mobile" />
+
+	<section unless="LAZY_LIBRARIES">
+		<library name="videos"        preload="true" />
+		<section if="PRELOAD_ALL">
+			<library name="songs"         preload="true" />
+			<library name="shared"        preload="true" />
+		</section>
+
+		<section if="NO_PRELOAD_ALL">
+			<library name="songs"         preload="false" />
+			<library name="shared"        preload="false" />
+		</section>
 	</section>
-	
-	<section if="NO_PRELOAD_ALL">
+
+	<section if="LAZY_LIBRARIES">
+		<library name="videos"        preload="false" />
 		<library name="songs"         preload="false" />
 		<library name="shared"        preload="false" />
 	</section>
 	
-	<haxelib name="hxcodec" version="2.6.1" />
+	<haxelib name="hxvlc" if="VIDEOS_ALLOWED" />
 
-	<assets path="plugins/"             rename=''               if="VIDEOS_ALLOWED windows" />
-	<assets path="dlls/"                rename=''               if="VIDEOS_ALLOWED windows" />
 	<assets path="assets/videos"        library="videos"        if="VIDEOS_ALLOWED"/>
 	<assets path="assets/songs"         library="songs"         exclude="*.ogg" if="web"/>
 	<assets path="assets/songs"         library="songs"         exclude="*.mp3" unless="web"/>
@@ -100,6 +113,7 @@
 	<haxelib name="faxe" if='switch'/>
 	<!--<haxelib name="polymod"/> -->
 	<haxelib name="discord_rpc" if="desktop"/>
+	<haxelib name="android-manager" if="android"/>
 	<!-- <haxelib name="hxcpp-debug-server" if="desktop"/> -->
 	
 	<!-- <haxelib name="markdown" /> -->

@@ -13,7 +13,7 @@ import flixel.tweens.FlxTween;
 import flixel.math.FlxMath;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.util.FlxSort;
 import flixel.util.FlxTimer;
 import FunkinLua;
@@ -93,8 +93,8 @@ class EditorPlayState extends MusicBeatState
 		generateSong(PlayState.SONG.song);
 		#if LUA_ALLOWED
 		for (notetype in noteTypeMap.keys()) {
-			var luaToLoad:String = Paths.modFolders('custom_notetypes/' + notetype + '.lua');
-			if(sys.FileSystem.exists(luaToLoad)) {
+			var luaToLoad:Null<String> = Paths.findLua('custom_notetypes/' + notetype + '.lua');
+			if(luaToLoad != null) {
 				var lua:editors.EditorLua = new editors.EditorLua(luaToLoad);
 				new FlxTimer().start(0.1, function (tmr:FlxTimer) {
 					lua.stop();

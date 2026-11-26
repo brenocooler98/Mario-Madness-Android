@@ -9,7 +9,7 @@ import flixel.FlxSubState;
 import flixel.addons.transition.FlxTransitionableState;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.input.keyboard.FlxKey;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
@@ -346,7 +346,10 @@ class PauseSubState extends MusicBeatSubstate
 
 		changeSelection();
 
-		cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
+		cameras = [CoolUtil.getTopCamera()];
+
+		enableTouchMenu();
+		addBackButton();
 	}
 
 	var selected:Bool = false;
@@ -380,6 +383,25 @@ class PauseSubState extends MusicBeatSubstate
 		var leftP = controls.UI_LEFT_P;
 		var rightP = controls.UI_RIGHT_P;
 		var accepted = controls.ACCEPT;
+
+		if (theleft && !selected)
+		{
+			touchList(menuItemslol.members, curSelected, changeSelection);
+			if (controls.BACK && menuItems.contains("Resume"))
+			{
+				curSelected = menuItems.indexOf("Resume");
+				changeSelection();
+				accepted = true;
+			}
+		}
+
+		if ((retromenu || PlayState.curStage == 'piracy') && descArrow != null && descArrow.visible && touchTapped(descArrow))
+		{
+			if (theleft)
+				rightP = true;
+			else
+				leftP = true;
+		}
 
 		if(retromenu || PlayState.curStage == 'piracy'){
 			if (leftP)
@@ -536,10 +558,14 @@ class PauseSubState extends MusicBeatSubstate
 
 						if (PlayState.curStage == 'virtual')
 						{
+							#if desktop
 							Lib.application.window.fullscreen = false;
 							Lib.application.window.maximized = false;
-							Lib.application.window.resize(restsizeX, restsizeY);
+							#end
+							CoolUtil.resizeWindow(restsizeX, restsizeY);
+							#if desktop
 							Lib.application.window.move(restX, restY);
+							#end
 							CppAPI.setWallpaper('old');
 						}
 

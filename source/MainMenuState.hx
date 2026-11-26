@@ -1,5 +1,6 @@
 package;
 
+import openfl.utils.Assets as OpenFlAssets;
 import TitleScreenShaders.NTSCGlitch;
 import TitleScreenShaders.NTSCSFilter;
 import editors.MasterEditorMenu;
@@ -18,7 +19,7 @@ import flixel.input.mouse.FlxMouse;
 import flixel.input.mouse.FlxMouseEventManager;
 import flixel.math.FlxMath;
 import flixel.math.FlxPoint;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
@@ -153,15 +154,21 @@ class MainMenuState extends MusicBeatState {
 			PlayState.ogwinY = Lib.application.window.y;
 			}
 			var win = Lib.application.window;
+			#if desktop
 			win.move(PlayState.ogwinX, PlayState.ogwinY);
-			FlxG.resizeWindow(1280, 720);
+			#end
+			CoolUtil.resizeWindow(1280, 720);
 			FlxG.resizeGame(1280, 720);
 			Lib.current.x = 0;
 			Lib.current.y = 0;
+			#if desktop
 			win.resizable = true;
+			#end
 		}
 		
+		#if desktop
 		Lib.application.window.resizable = lime._internal.backend.native.NativeApplication.fullscreenable = true;
+		#end
 
 		if(FlxG.sound.music == null){
 			FlxG.sound.playMusic(Paths.music('freakyMenu'));
@@ -205,7 +212,7 @@ class MainMenuState extends MusicBeatState {
 
 		bloom = new BloomShader();
 		bloom.Size.value = [1];
-		FlxG.camera.setFilters([new ShaderFilter(ntsc = new NTSCGlitch(0.4)), new ShaderFilter(bloom)]);
+		FlxG.camera.filters = [new ShaderFilter(ntsc = new NTSCGlitch(0.4)), new ShaderFilter(bloom)];
 
 		var stagenumb:Int = ClientPrefs.menuBG - 1;
 
@@ -621,7 +628,7 @@ class MainMenuState extends MusicBeatState {
 		}
 
 		Mouse.cursor = WEHOVERING ? BUTTON : ARROW;
-		if (controls.ACCEPT && smOpen) {
+		if ((controls.ACCEPT || touchTapped()) && smOpen) {
 			smOpen = false;
 			FlxG.sound.play(Paths.sound('accept'));
 			if(showMsg == 1){
@@ -786,7 +793,7 @@ class MainMenuState extends MusicBeatState {
 			star.x = Math.PI + (star.width * 1.25); star.alpha = 0; // TO STOP STUPID FUCKING GLITCH
 			FlxTween.tween(star, {x: star.x - (star.width * 1.25), alpha: 1}, 0.4, {ease: FlxEase.circOut, startDelay: 0.1 + (0.1 * star.ID)});
 		}
-		FlxG.camera.setFilters([new ShaderFilter(ntsc), new ShaderFilter(bloom)]);
+		FlxG.camera.filters = [new ShaderFilter(ntsc), new ShaderFilter(bloom)];
 
 		for (spr in [fondo11, estatica]) {
 			if (spr.alpha >= 0.99) return;
@@ -1057,7 +1064,7 @@ class MainMenuState extends MusicBeatState {
 							#if VIDEOS_ALLOWED
 							var foundFile:Bool = false;
 							var fileName:String = #if MODS_ALLOWED Paths.modFolders('videos/' + "penkaru" + '.' + Paths.VIDEO_EXT); #else ''; #end
-							#if sys
+							#if (sys && !mobile)
 							if (FileSystem.exists(fileName))
 							{
 								foundFile = true;
@@ -1066,13 +1073,15 @@ class MainMenuState extends MusicBeatState {
 
 							if (!foundFile) {
 								fileName = Paths.video("penkaru");
-								if (#if sys FileSystem.exists(fileName) #else OpenFlAssets.exists(fileName) #end)
+								if (#if (sys && !mobile) FileSystem.exists(fileName) #else OpenFlAssets.exists(fileName) #end)
 									foundFile = true;
 
 								if (foundFile) {
 									Lib.application.window.title = "*  You look inside the drawer and find a old vhs of a dance you used to do in highschool. *  Did this ever exist? When did you take this video?";
+									#if desktop
 									Lib.application.window.resizable = false;
-									FlxG.resizeWindow(1280, 720);
+									#end
+									CoolUtil.resizeWindow(1280, 720);
 
 									FlxG.sound.volume = 1;
 									FlxG.sound.soundTray.visual = false;
@@ -1080,7 +1089,9 @@ class MainMenuState extends MusicBeatState {
 
 									// Am I Evil??? (i do not care about streamer mode)
 									CppAPI.removeWindowIcon();
+									#if desktop
 									FlxG.fullscreen = FlxG.autoPause = false;
+									#end
 									Lib.application.window.onClose.add(function () {
 										Lib.application.window.onClose.cancel();
 									});

@@ -8,7 +8,7 @@ import flixel.FlxSubState;
 import flixel.addons.display.FlxBackdrop;
 import flixel.math.FlxMath;
 import flixel.math.FlxPoint;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
@@ -541,8 +541,16 @@ class GameOverSubstate extends MusicBeatSubstate
 		//trace('quiere ser ' + camFollow + ' pero debe ser ' + camFollowPos);
 	}
 
+	var touchReady:Bool = false;
+
 	override function update(elapsed:Float)
 	{
+		if (!touchReady)
+		{
+			touchReady = true;
+			addBackButton();
+		}
+
 		super.update(elapsed);
 
 		if(PlayState.curStage == 'piracy')
@@ -602,7 +610,7 @@ class GameOverSubstate extends MusicBeatSubstate
 			}
 		}
 
-		if (controls.ACCEPT && PlayState.curStage != 'racing')
+		if ((controls.ACCEPT || (touchTapped() && PlayState.curStage != 'piracy' && PlayState.curStage != 'directstream')) && PlayState.curStage != 'racing')
 		{
 			acceptConfirm();
 		}

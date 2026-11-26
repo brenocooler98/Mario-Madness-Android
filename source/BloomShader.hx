@@ -21,8 +21,14 @@ class BloomShader extends FlxShader // BLOOM SHADER BY BBPANZU
 
 		vec4 Color = texture2D( bitmap, uv);
 		
-		for(float d=0.0; d<Pi; d+=Pi/Directions){
-			for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality){
+		for (int di = 0; di < 64; di++) {
+			if (float(di) >= Directions)
+				break;
+			float d = float(di) * Pi / Directions;
+			for (int qi = 1; qi <= 16; qi++) {
+				if (float(qi) > Quality)
+					break;
+				float i = float(qi) / Quality;
 
 				float ex = (cos(d)*Size*i)/openfl_TextureSize.x;
 				float why = (sin(d)*Size*i)/openfl_TextureSize.y;
@@ -42,7 +48,7 @@ class BloomShader extends FlxShader // BLOOM SHADER BY BBPANZU
 		super();
 
 		Size.value = [18.0];
-		Quality.value = [8.0];
+		Quality.value = [#if mobile 4.0 #else 8.0 #end];
 		dim.value = [2.0];
 		Directions.value = [16.0];
 	}
