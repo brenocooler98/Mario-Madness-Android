@@ -12,6 +12,62 @@ import sys.FileSystem;
 import sys.io.File;
 import sys.io.FileOutput;
 
+@:cppFileCode('
+#include <signal.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+
+static char mm_session_path[1024];
+
+static void mm_write(int fd, const char* text)
+{
+	if (text)
+		write(fd, text, strlen(text));
+}
+
+static void mm_signal_handler(int sig, siginfo_t* info, void* context)
+{
+	static volatile int handling = 0;
+	if (!handling)
+	{
+		handling = 1;
+		int fd = open(mm_session_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
+		if (fd >= 0)
+		{
+			char line[160];
+			snprintf(line, sizeof(line), "native crash: signal %d (%s) at %p\\n", sig, strsignal(sig), info ? info->si_addr : 0);
+			mm_write(fd, line);
+			Array<String> stack = __hxcpp_get_call_stack(false);
+			if (stack.mPtr)
+			{
+				for (int i = 0; i < stack->length; i++)
+				{
+					mm_write(fd, "  at ");
+					mm_write(fd, stack[i].utf8_str());
+					mm_write(fd, "\\n");
+				}
+			}
+			close(fd);
+		}
+	}
+	signal(sig, SIG_DFL);
+	raise(sig);
+}
+
+static void mm_install_handlers(const char* path)
+{
+	strncpy(mm_session_path, path, sizeof(mm_session_path) - 1);
+	struct sigaction action;
+	memset(&action, 0, sizeof(action));
+	action.sa_sigaction = mm_signal_handler;
+	action.sa_flags = SA_SIGINFO | SA_ONSTACK;
+	int signals[] = {SIGSEGV, SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGTRAP};
+	for (int i = 0; i < 6; i++)
+		sigaction(signals[i], &action, NULL);
+}
+')
 class SessionLog
 {
 	static var output:FileOutput;
@@ -36,6 +92,8 @@ class SessionLog
 		}
 
 		startTime = Timer.stamp();
+		var nativePath:String = path;
+		untyped __cpp__('mm_install_handlers({0}.utf8_str())', nativePath);
 		var build = Device.name;
 		mark('start ' + lime.app.Application.current.meta.get('version') + ' build ' + BuildInfo.id + ' device ' + build);
 

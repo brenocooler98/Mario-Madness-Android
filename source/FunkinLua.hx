@@ -52,13 +52,17 @@ class FunkinLua
 		mobile.SessionLog.mark('lua ' + script);
 		#end
 		lua = LuaL.newstate();
+		luaMark('state created');
 		LuaL.openlibs(lua);
+		luaMark('libs opened');
 		Lua.init_callbacks(lua);
+		luaMark('callbacks ready');
 
 		// trace('Lua version: ' + Lua.version());
 		// trace("LuaJIT version: " + Lua.versionJIT());
 
 		var result:Dynamic = #if (sys && !mobile) LuaL.dofile(lua, script); #else (sys.FileSystem.exists(script) ? LuaL.dofile(lua, script) : LuaL.dostring(lua, openfl.utils.Assets.getText(script))); #end
+		luaMark('script loaded with status ' + result);
 		var resultStr:String = result != 0 ? Lua.tostring(lua, -1) : null;
 		if (result != 0)
 		{
@@ -78,6 +82,7 @@ class FunkinLua
 
 		var curState:Dynamic = FlxG.state;
 		lePlayState = curState;
+		luaMark('setting variables');
 
 		// Lua shit
 		set('Function_Stop', Function_Stop);
@@ -155,6 +160,7 @@ class FunkinLua
 		set('lowQuality', ClientPrefs.lowQuality);
 
 		// stuff 4 noobz like you B)
+		luaMark('adding functions');
 		Lua_helper.add_callback(lua, "getProperty", function(variable:String)
 		{
 			var killMe:Array<String> = variable.split('.');
@@ -1399,7 +1405,9 @@ class FunkinLua
 			FlxG.sound.music.fadeOut(duration, toValue);
 			luaTrace('musicFadeOut is deprecated! Use soundFadeOut instead.', false, true);
 		});
+		luaMark('functions added');
 		call('onCreate', []);
+		luaMark('ready');
 		call('onCreatePost', []);
 		#end
 	}
@@ -1605,6 +1613,17 @@ class FunkinLua
 		#end
 	}
 
+	#if android
+	var markedEvents:Map<String, Bool> = new Map<String, Bool>();
+	#end
+
+	inline function luaMark(text:String):Void
+	{
+		#if android
+		mobile.SessionLog.mark('lua ' + text);
+		#end
+	}
+
 	public function call(event:String, args:Array<Dynamic>):Dynamic
 	{
 		#if LUA_ALLOWED
@@ -1613,6 +1632,13 @@ class FunkinLua
 			return Function_Continue;
 		}
 
+		#if android
+		if (!markedEvents.exists(event))
+		{
+			markedEvents.set(event, true);
+			luaMark('calling ' + event);
+		}
+		#end
 		Lua.getglobal(lua, event);
 		if (Lua.type(lua, -1) != Lua.LUA_TFUNCTION)
 		{
