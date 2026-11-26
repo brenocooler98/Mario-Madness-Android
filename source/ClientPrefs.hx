@@ -30,6 +30,7 @@ class ClientPrefs {
 	public static var invisibleHitbox:Bool = false;
 	public static var invisiblePauseButton:Bool = false;
 	public static var dodgeOnTop:Bool = false;
+	public static var screenStyle:String = 'Original';
 
 	public static var filtro85:Bool = true;
 	public static var pauseStart:Bool = false;
@@ -144,6 +145,7 @@ class ClientPrefs {
 		FlxG.save.data.invisibleHitbox = invisibleHitbox;
 		FlxG.save.data.invisiblePauseButton = invisiblePauseButton;
 		FlxG.save.data.dodgeOnTop = dodgeOnTop;
+		FlxG.save.data.screenStyle = screenStyle;
 
 		FlxG.save.flush();
 
@@ -238,6 +240,12 @@ class ClientPrefs {
 		if (FlxG.save.data.invisiblePauseButton != null) {
 			invisiblePauseButton = FlxG.save.data.invisiblePauseButton;
 		}
+		if (FlxG.save.data.screenStyle != null) {
+			screenStyle = FlxG.save.data.screenStyle;
+		}
+		#if mobile
+		mobile.MobileWindow.setFullscreen(screenStyle == 'Fullscreen');
+		#end
 		if (FlxG.save.data.dodgeOnTop != null) {
 			dodgeOnTop = FlxG.save.data.dodgeOnTop;
 		}

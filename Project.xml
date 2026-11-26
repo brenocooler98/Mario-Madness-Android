@@ -30,6 +30,8 @@
 	<!--Mobile-specific-->
 	<window if="mobile" orientation="landscape" fullscreen="true" width="0" height="0" resizable="false" allow-shaders="true" require-shaders="true" />
 
+	<java path="java" if="android" />
+
 	<architecture name="arm64" if="android" />
 	<architecture exclude="armv7" if="android" />
 	<architecture exclude="x86" if="android" />

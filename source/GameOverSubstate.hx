@@ -610,7 +610,7 @@ class GameOverSubstate extends MusicBeatSubstate
 			}
 		}
 
-		if ((controls.ACCEPT || (touchTapped() && PlayState.curStage != 'piracy' && PlayState.curStage != 'directstream')) && PlayState.curStage != 'racing')
+		if ((controls.ACCEPT || (touchConfirm() && PlayState.curStage != 'piracy' && PlayState.curStage != 'directstream')) && PlayState.curStage != 'racing')
 		{
 			acceptConfirm();
 		}

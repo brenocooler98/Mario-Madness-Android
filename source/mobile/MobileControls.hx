@@ -68,14 +68,15 @@ class MobileControls
 		if (owner != MobileInput.topState())
 			return;
 
-		var index:Int = TouchUtil.tappedIndex(items, TouchUtil.getStateCamera(owner));
+		var camera:FlxCamera = TouchUtil.getStateCamera(owner);
+		var index:Int = TouchUtil.tappedIndex(items, camera);
 		if (index == -1)
 			return;
 
-		if (index == selected)
-			MobileInput.inject(ACCEPT);
-		else
+		if (index != selected)
 			change(index - selected);
+		if (TouchUtil.doubleTapped(items[index], camera))
+			MobileInput.inject(ACCEPT);
 	}
 
 	public static function handleTap(owner:FlxState, ?object:FlxBasic, control:Control):Bool

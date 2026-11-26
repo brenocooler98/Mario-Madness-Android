@@ -7434,7 +7434,7 @@ class PlayState extends MusicBeatState
 				bftors.visible = bfext.visible = !(bftorsmiss.visible = bfextmiss.visible = boyfriend.animation.curAnim.name.endsWith('miss'));
 				if(warioDead){
 					//apparition game over confirm/exit
-					if(controls.ACCEPT || touchTapped()){
+					if(controls.ACCEPT || touchConfirm()){
 						FlxG.sound.music.volume = 0;
 						FlxG.sound.play(Paths.music(GameOverSubstate.endSoundName));
 						new FlxTimer().start(2, function(gef:FlxTimer)

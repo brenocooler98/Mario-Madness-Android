@@ -173,7 +173,7 @@ class CustomFreeplayState extends MusicBeatSubstate
 				}
 			}
 
-			if(clicked(spr)){
+			if(confirmClicked(spr)){
 				goToState();
 			}
 		});
@@ -489,7 +489,7 @@ class FreeplaySubState extends MusicBeatSubstate
 				FlxTween.cancelTweensOf(arrowR.scale);
 				FlxTween.tween(arrowR.scale, {x: 0.6, y: 0.6}, 0.5, {ease: FlxEase.expoOut});
 			}
-			else if (clicked() && !quieto)
+			else if (confirmClicked() && !quieto)
 			{
 				goToSong();
 			}

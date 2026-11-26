@@ -396,7 +396,7 @@ class NotesSubstate extends MusicBeatSubstate
 			}
 		}
 
-		if (controls.BACK || (changingNote && (controls.ACCEPT || touchTapped())))
+		if (controls.BACK || (changingNote && (controls.ACCEPT || touchConfirm())))
 		{
 			changeSelection();
 			if (!changingNote)
@@ -1697,7 +1697,7 @@ class DeleteSubstate extends MusicBeatSubstate
 			darkbg.alpha = 0.2;
 			add(darkbg);
 
-			text = new FlxText(0, 0, 1000, 'Do you want to delete all your progress?\n\n\n' + #if mobile 'Tap the screen to continue' #else 'Press Enter to continue' #end, 32);
+			text = new FlxText(0, 0, 1000, 'Do you want to delete all your progress?\n\n\n' + #if mobile 'Double tap the screen to continue' #else 'Press Enter to continue' #end, 32);
 			text.setFormat(Paths.font("mariones.ttf"), 36, FlxColor.RED, "center", FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			text.screenCenter(XY);
 			add(text);
@@ -1733,16 +1733,16 @@ class DeleteSubstate extends MusicBeatSubstate
 					close();
 				}
 			
-			if((controls.ACCEPT || (touchTapped() && !(rotButton.visible && touchTapped(rotButton)))) && delPhase <= 3 && timer == 0 && cat.angle == 0){
+			if((controls.ACCEPT || (touchConfirm() && !(rotButton.visible && touchTapped(rotButton)))) && delPhase <= 3 && timer == 0 && cat.angle == 0){
 				switch(delPhase){
 					case 0:
 						timer = 1;
-						text.text = 'to make it clear, you will lose all your progress in the mod\n\n' + #if mobile 'Tap the screen' #else 'Press enter' #end + ' if you REALLY want to delete it';
+						text.text = 'to make it clear, you will lose all your progress in the mod\n\n' + #if mobile 'Double tap the screen' #else 'Press enter' #end + ' if you REALLY want to delete it';
 						text.screenCenter(XY);
 					case 1:
 						FlxG.mouse.visible = true;
 						timer = 1;
-						text.text = 'Rotate the cat to the right direction and ' + #if mobile 'tap the screen' #else 'press enter' #end + ' if you are going to delete your progress';
+						text.text = 'Rotate the cat to the right direction and ' + #if mobile 'double tap the screen' #else 'press enter' #end + ' if you are going to delete your progress';
 						text.y = 100;
 						cat.angle = 90 * FlxG.random.int(1, 3);
 						cat.visible = true;
@@ -1751,7 +1751,7 @@ class DeleteSubstate extends MusicBeatSubstate
 						FlxG.mouse.visible = false;
 						timer = 1;
 						text.y = 0;
-						text.text = #if mobile 'Tap the screen' #else 'Press enter' #end + ' For real this time to delete your progress';
+						text.text = #if mobile 'Double tap the screen' #else 'Press enter' #end + ' For real this time to delete your progress';
 						text.screenCenter(XY);
 						cat.visible = false;
 						rotButton.visible = false;
@@ -1788,7 +1788,7 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 	private static var curSelected:Int = 1;
 
 	static var unselectableOptions:Array<String> = ['MOBILE'];
-	static var noCheckbox:Array<String> = ['Hitbox Opacity', 'Dodge Button', 'Unlock All'];
+	static var noCheckbox:Array<String> = ['Hitbox Opacity', 'Dodge Button', 'Screen Style', 'Unlock All'];
 
 	static var options:Array<String> = [
 		'MOBILE',
@@ -1796,6 +1796,7 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 		'Hitbox Opacity',
 		'Invisible Pause Button',
 		'Dodge Button',
+		'Screen Style',
 		'Unlock All'
 	];
 
@@ -1879,7 +1880,7 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 	function updateTouchArrows():Void
 	{
 		var option:String = options[curSelected];
-		setTouchArrowsVisible(option == 'Hitbox Opacity' || option == 'Dodge Button');
+		setTouchArrowsVisible(option == 'Hitbox Opacity' || option == 'Dodge Button' || option == 'Screen Style');
 	}
 
 	override function update(elapsed:Float)
@@ -1917,6 +1918,8 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 					ClientPrefs.invisiblePauseButton = !ClientPrefs.invisiblePauseButton;
 				case 'Dodge Button':
 					ClientPrefs.dodgeOnTop = !ClientPrefs.dodgeOnTop;
+				case 'Screen Style':
+					toggleScreenStyle();
 				case 'Unlock All':
 					if (unlockConfirm)
 					{
@@ -1928,7 +1931,7 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 					else
 					{
 						unlockConfirm = true;
-						descText.text = "Tap it again to confirm.\nThis unlocks every world, song and secret.";
+						descText.text = "Double tap it again to confirm.\nThis unlocks every world, song and secret.";
 					}
 			}
 			if (option != 'Unlock All')
@@ -1937,9 +1940,13 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 			reloadValues();
 		}
 
-		if (option == 'Dodge Button' && (controls.UI_LEFT_P || controls.UI_RIGHT_P))
+		if ((option == 'Dodge Button' || option == 'Screen Style') && (controls.UI_LEFT_P || controls.UI_RIGHT_P))
 		{
-			ClientPrefs.dodgeOnTop = !ClientPrefs.dodgeOnTop;
+			if (option == 'Dodge Button')
+				ClientPrefs.dodgeOnTop = !ClientPrefs.dodgeOnTop;
+			else
+				toggleScreenStyle();
+			ClientPrefs.saveSettings();
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 			reloadValues();
 		}
@@ -1965,6 +1972,12 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 			nextAccept -= 1;
 
 		super.update(elapsed);
+	}
+
+	function toggleScreenStyle():Void
+	{
+		ClientPrefs.screenStyle = ClientPrefs.screenStyle == 'Fullscreen' ? 'Original' : 'Fullscreen';
+		mobile.MobileWindow.setFullscreen(ClientPrefs.screenStyle == 'Fullscreen');
 	}
 
 	function unlockAll():Void
@@ -2002,6 +2015,7 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 			case 'Hitbox Opacity': "How visible the touch lanes are when pressed.";
 			case 'Invisible Pause Button': "If checked, the pause button is hidden\nbut it still works when tapped.";
 			case 'Dodge Button': "Where the yellow dodge bar shows up\non songs with the dodge mechanic.";
+			case 'Screen Style': "Original keeps the 16:9 screen with black borders.\nFullscreen fills the whole screen during songs without stretching.";
 			case 'Unlock All': "Unlocks every world, song and secret.";
 			default: "";
 		}
@@ -2077,6 +2091,7 @@ class MobileOptionsSubstate extends MusicBeatSubstate
 				{
 					case 'Hitbox Opacity': Math.round(ClientPrefs.hitboxAlpha * 100) + '%';
 					case 'Dodge Button': ClientPrefs.dodgeOnTop ? 'Up' : 'Down';
+					case 'Screen Style': ClientPrefs.screenStyle;
 					default: '';
 				}
 				var lastTracker:FlxSprite = text.sprTracker;

@@ -1,5 +1,6 @@
 package mobile;
 
+import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.math.FlxRect;
 import openfl.geom.Point;
@@ -16,6 +17,13 @@ class MobileWindow
 	static var masks:Shape;
 	static var initialized:Bool = false;
 	static var maskKey:String = '';
+	public static var fullscreen(default, null):Bool = false;
+
+	static var wideCamera:FlxCamera;
+	static var wideBaseX:Float = 0;
+	static var wideBaseWidth:Int = 0;
+	static var wideExtra:Int = 0;
+
 	static var viewX:Float = 0;
 	static var viewY:Float = 0;
 	static var viewWidth:Float = 0;
@@ -44,6 +52,13 @@ class MobileWindow
 			return;
 		MobileWindow.width = width;
 		MobileWindow.height = height;
+		apply();
+	}
+
+	public static function setFullscreen(value:Bool):Void
+	{
+		fullscreen = value;
+		ScreenStyle.apply(value);
 		apply();
 	}
 
@@ -81,12 +96,64 @@ class MobileWindow
 		target.x = ((zoom - 1) * root.x + cornerX) / rootScale;
 		target.y = ((zoom - 1) * root.y + cornerY) / rootScaleY;
 
-		viewX = cornerX;
-		viewY = cornerY;
-		viewWidth = width * zoom;
-		viewHeight = height * zoom;
+		var wide:Bool = fullscreen && width == 1280 && height == 720 && cornerX > 0 && Std.isOfType(FlxG.state, PlayState);
+		var extra:Int = 0;
+		if (wide)
+		{
+			var edge:Point = FlxG.game.globalToLocal(new Point(0, cornerY));
+			extra = Std.int(Math.max(0, Math.ceil(-edge.x)));
+		}
+		updateWideCamera(wide ? extra : 0);
 
-		drawMasks(stageWidth, stageHeight, cornerX, cornerY, width * zoom, height * zoom);
+		if (wide && extra > 0)
+		{
+			viewX = 0;
+			viewY = cornerY;
+			viewWidth = stageWidth;
+			viewHeight = height * zoom;
+			drawMasks(stageWidth, stageHeight, 0, cornerY, stageWidth, height * zoom);
+		}
+		else
+		{
+			viewX = cornerX;
+			viewY = cornerY;
+			viewWidth = width * zoom;
+			viewHeight = height * zoom;
+			drawMasks(stageWidth, stageHeight, cornerX, cornerY, width * zoom, height * zoom);
+		}
+	}
+
+	static function updateWideCamera(extra:Int):Void
+	{
+		var camera:FlxCamera = extra > 0 && FlxG.cameras.list.length > 0 ? FlxG.cameras.list[0] : null;
+
+		if (wideCamera != null)
+		{
+			var valid:Bool = FlxG.cameras.list.contains(wideCamera) && wideCamera.width == wideBaseWidth + wideExtra * 2;
+			if (!valid)
+			{
+				wideCamera = null;
+			}
+			else if (wideCamera != camera || wideExtra != extra)
+			{
+				wideCamera.x = wideBaseX;
+				wideCamera.width = wideBaseWidth;
+				wideCamera = null;
+			}
+		}
+
+		if (camera == null || wideCamera != null)
+			return;
+
+		if (camera.x != 0 || camera.width != FlxG.width)
+			return;
+
+		wideCamera = camera;
+		wideBaseX = camera.x;
+		wideBaseWidth = camera.width;
+		wideExtra = extra;
+		camera.x = wideBaseX - extra;
+		camera.width = wideBaseWidth + extra * 2;
 	}
 
 	public static function getVisibleRect():FlxRect

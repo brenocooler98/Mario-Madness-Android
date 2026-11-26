@@ -93,7 +93,7 @@ class BotplayState extends MusicBeatState
 					select(spr.ID);
 				}
 
-				if(FlxG.mouse.justPressed && FlxG.mouse.overlaps(spr)){
+				if(confirmClicked(spr)){
 					//goToState();
 					canSelect = false;
 					FlxTween.tween(spr.scale, {x: 0.9, y: 0.9}, 0.05, {ease: FlxEase.cubeIn, onComplete: function(twn:FlxTween){

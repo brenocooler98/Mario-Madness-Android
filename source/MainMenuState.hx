@@ -598,7 +598,7 @@ class MainMenuState extends MusicBeatState {
 						}
 					});
 	
-					if (FlxG.mouse.justReleased && hovering && canSelectSomethin) goToState();
+					if (#if mobile touchConfirm() #else FlxG.mouse.justReleased #end && hovering && canSelectSomethin) goToState();
 				}	
 			}
 			if (curButton != null) postionCorners(curButton);
@@ -628,7 +628,7 @@ class MainMenuState extends MusicBeatState {
 		}
 
 		Mouse.cursor = WEHOVERING ? BUTTON : ARROW;
-		if ((controls.ACCEPT || touchTapped()) && smOpen) {
+		if ((controls.ACCEPT || touchConfirm()) && smOpen) {
 			smOpen = false;
 			FlxG.sound.play(Paths.sound('accept'));
 			if(showMsg == 1){

@@ -21,6 +21,9 @@ class TouchUtil
 	public static var verticalStep:Float = 70;
 	public static var horizontalStep:Float = 110;
 
+	public static var doubleTapTime:Float = 0.35;
+	public static var doubleTapDistance:Float = 60;
+
 	public static var flingSpeed:Float = 1400;
 	public static var flingMaxSteps:Int = 10;
 
@@ -29,6 +32,11 @@ class TouchUtil
 	static var velocities:Map<Int, FlxPoint> = new Map<Int, FlxPoint>();
 	static var steps:Array<SwipeDirection> = [];
 	static var dragged:Array<Int> = [];
+
+	static var lastTapTime:Float = -1;
+	static var lastTapX:Float = 0;
+	static var lastTapY:Float = 0;
+	static var doubleTapIds:Array<Int> = [];
 
 	static var scrollTouch:Int = -1;
 	static var scrollLastY:Float = 0;
@@ -123,6 +131,46 @@ class TouchUtil
 
 		updateFling(elapsed);
 		updateScroll(elapsed);
+		updateDoubleTaps();
+	}
+
+	static function updateDoubleTaps():Void
+	{
+		doubleTapIds.resize(0);
+		for (touch in FlxG.touches.list)
+		{
+			if (!isTap(touch))
+				continue;
+
+			var now:Float = haxe.Timer.stamp();
+			var dx:Float = touch.viewX - lastTapX;
+			var dy:Float = touch.viewY - lastTapY;
+			if (lastTapTime >= 0 && now - lastTapTime <= doubleTapTime && Math.sqrt(dx * dx + dy * dy) <= doubleTapDistance)
+			{
+				doubleTapIds.push(touch.touchPointID);
+				lastTapTime = -1;
+			}
+			else
+			{
+				lastTapTime = now;
+				lastTapX = touch.viewX;
+				lastTapY = touch.viewY;
+			}
+		}
+	}
+
+	public static function doubleTapped(?object:FlxBasic, ?camera:FlxCamera):Bool
+	{
+		if (doubleTapIds.length == 0)
+			return false;
+		for (touch in FlxG.touches.list)
+		{
+			if (!doubleTapIds.contains(touch.touchPointID))
+				continue;
+			if (object == null || touch.overlaps(object, getCamera(object, camera)))
+				return true;
+		}
+		return false;
 	}
 
 	static function updateScroll(elapsed:Float):Void

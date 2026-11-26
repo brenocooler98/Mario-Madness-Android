@@ -146,6 +146,24 @@ class MusicBeatSubstate extends FlxSubState
 		#end
 	}
 
+	function touchConfirm(?object:flixel.FlxBasic):Bool
+	{
+		#if mobile
+		return this == mobile.MobileInput.topState() && mobile.TouchUtil.doubleTapped(object, mobile.TouchUtil.getStateCamera(this));
+		#else
+		return false;
+		#end
+	}
+
+	function confirmClicked(?object:flixel.FlxBasic):Bool
+	{
+		#if mobile
+		return touchConfirm(object);
+		#else
+		return FlxG.mouse.justPressed && (object == null || FlxG.mouse.overlaps(object));
+		#end
+	}
+
 	function touchScroll():Float
 	{
 		#if mobile

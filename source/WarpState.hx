@@ -376,7 +376,7 @@ class WarpState extends MusicBeatState
 
 			if (quieto)
 			{
-				if (controls.ACCEPT || touchTapped())
+				if (controls.ACCEPT || touchConfirm())
 					{
 						goodbye();
 					}
@@ -395,7 +395,7 @@ class WarpState extends MusicBeatState
 				// NORMAL
 			}
 			else{
-				if ((controls.ACCEPT || touchTapped()) && canPress)
+				if ((controls.ACCEPT || touchConfirm()) && canPress)
 					{
 						canPress = false;
 						introButton.animation.play('press');
@@ -1243,7 +1243,7 @@ class WorldState extends MusicBeatSubstate
 				}
 
 
-			if ((controls.ACCEPT || touchTapped()) && pipeTimer == 0)
+			if ((controls.ACCEPT || touchConfirm()) && pipeTimer == 0)
 				{
 					if(canciones[curSelected][0] == 'Start'){
 						quieto = false;
@@ -2048,13 +2048,13 @@ class UltraState extends MusicBeatSubstate
 				#end
 				if (quieto)
 				{
-					if ((controls.ACCEPT || touchTapped()) && cutScenes == 2)
+					if ((controls.ACCEPT || touchConfirm()) && cutScenes == 2)
 						{
 							cutScenes = 3;
 							gotoSong();
 						}
 
-					if ((FlxG.keys.justPressed.UP #if mobile || controls.UI_UP_P || touchTapped() #end) && cutScenes == 0)
+					if ((FlxG.keys.justPressed.UP #if mobile || controls.UI_UP_P || touchConfirm() #end) && cutScenes == 0)
 						{
 							quieto = false;
 							caminar();
@@ -2402,7 +2402,7 @@ class VirtualState extends MusicBeatSubstate
 	}
 
 	override function update(elapsed:Float) {
-		if ((controls.ACCEPT || touchTapped()) && !selected){
+		if ((controls.ACCEPT || touchConfirm()) && !selected){
 			selected = true;
 
 			for (i in 0...6)

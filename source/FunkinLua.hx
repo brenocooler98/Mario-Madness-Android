@@ -59,8 +59,8 @@ class FunkinLua
 		// trace("LuaJIT version: " + Lua.versionJIT());
 
 		var result:Dynamic = #if (sys && !mobile) LuaL.dofile(lua, script); #else (sys.FileSystem.exists(script) ? LuaL.dofile(lua, script) : LuaL.dostring(lua, openfl.utils.Assets.getText(script))); #end
-		var resultStr:String = Lua.tostring(lua, result);
-		if (resultStr != null && result != 0)
+		var resultStr:String = result != 0 ? Lua.tostring(lua, -1) : null;
+		if (result != 0)
 		{
 			lime.app.Application.current.window.alert(resultStr, 'Error on .LUA script!');
 			trace('Error on .LUA script! ' + resultStr);
@@ -1614,31 +1614,27 @@ class FunkinLua
 		}
 
 		Lua.getglobal(lua, event);
+		if (Lua.type(lua, -1) != Lua.LUA_TFUNCTION)
+		{
+			Lua.pop(lua, 1);
+			return Function_Continue;
+		}
 
 		for (arg in args)
 		{
 			Convert.toLua(lua, arg);
 		}
 
-		var result:Null<Int> = Lua.pcall(lua, args.length, 1, 0);
-		if (result != null && resultIsAllowed(lua, result))
+		var status:Int = Lua.pcall(lua, args.length, 1, 0);
+		if (status != 0)
 		{
-			/*var resultStr:String = Lua.tostring(lua, result);
-				var error:String = Lua.tostring(lua, -1);
-				Lua.pop(lua, 1); */
-			if (Lua.type(lua, -1) == Lua.LUA_TSTRING)
-			{
-				var error:String = Lua.tostring(lua, -1);
-				Lua.pop(lua, 1);
-				if (error == 'attempt to call a nil value')
-				{ // Makes it ignore warnings and not break stuff if you didn't put the functions on your lua file
-					return Function_Continue;
-				}
-			}
-
-			var conv:Dynamic = Convert.fromLua(lua, result);
-			return conv;
+			Lua.pop(lua, 1);
+			return Function_Continue;
 		}
+
+		var conv:Dynamic = resultIsAllowed(lua, -1) ? Convert.fromLua(lua, -1) : Function_Continue;
+		Lua.pop(lua, 1);
+		return conv;
 		#end
 		return Function_Continue;
 	}

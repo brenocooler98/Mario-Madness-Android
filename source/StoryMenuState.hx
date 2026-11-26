@@ -133,7 +133,7 @@ class StoryMenuState extends MusicBeatSubstate
 
 		if(ClientPrefs.storySave[0]) titleText.text = "Includes\nIt's-a-me\nStarman Slaughter";
 
-		startText = new FlxText(800, 600, 400, #if mobile "Tap Here to Begin" #else "Press Enter to Begin" #end, 32);
+		startText = new FlxText(800, 600, 400, #if mobile "Double Tap Here to Begin" #else "Press Enter to Begin" #end, 32);
 		startText.setFormat(Paths.font("mariones.ttf"), 24, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		startText.scrollFactor.set(1, 1);
 		startText.updateHitbox();
@@ -233,11 +233,11 @@ class StoryMenuState extends MusicBeatSubstate
 	override function update(elapsed:Float)
 	{
 		tottalTimer += elapsed;
-		if ((controls.ACCEPT || (startText.visible && touchTapped(startText))) && quieto)
+		if ((controls.ACCEPT || (startText.visible && touchConfirm(startText))) && quieto)
 		{
 			selectWeek();
 		}
-		else if((controls.ACCEPT || touchTapped()) && inCutscene){
+		else if((controls.ACCEPT || touchConfirm()) && inCutscene){
 			inCutscene = false;
 			vid.finishCallback = null;
 			vid.bitmap.stop();
