@@ -871,6 +871,9 @@ class PlayState extends MusicBeatState
 		PauseSubState.muymalo = 1;
 		var songName:String = Paths.formatToSongPath(SONG.song);
 		curStage = PlayState.SONG.stage;
+		#if android
+		mobile.SessionLog.mark('song ' + SONG.song + ' stage ' + curStage);
+		#end
 
 		if (curStage == 'somari')
 		{
@@ -4949,7 +4952,13 @@ class PlayState extends MusicBeatState
 			add(ratingTxt);
 		}
 
+		#if android
+		mobile.SessionLog.mark('generating song');
+		#end
 		generateSong(SONG.song);
+		#if android
+		mobile.SessionLog.mark('song generated');
+		#end
 		modManager = new ModManager(this);
 
 		#if LUA_ALLOWED
@@ -5881,12 +5890,18 @@ class PlayState extends MusicBeatState
 		DiscordClient.changePresence(detailsText, newName + legacycheck, discName.toLowerCase(), iconP2.getCharacter().toLowerCase());
 		#end
 
+		#if android
+		mobile.SessionLog.mark('adding touch controls');
+		#end
 		addHitbox(curStage == 'turmoilsweep' || curStage == 'castlestar', ClientPrefs.dodgeOnTop);
 		addPauseButton();
 
 		callOnLuas('onCreatePost', []);
 
 		super.create();
+		#if android
+		mobile.SessionLog.mark('playstate created');
+		#end
 	}
 
 	public function lofiTweensToBeCreepyTo(sprite:FlxSprite):Void

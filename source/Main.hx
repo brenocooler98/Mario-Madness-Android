@@ -83,6 +83,9 @@ class Main extends Sprite {
 		if (fpsVar != null) {
 			fpsVar.visible = false;
 		}
+		#if android
+		mobile.SessionLog.init();
+		#end
 		#if LAZY_LIBRARIES
 		registerLibraries(['shared', 'songs', 'videos']);
 		#end

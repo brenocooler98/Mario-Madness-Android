@@ -380,8 +380,15 @@ class Paths
 		//trace(path);
 		if (OpenFlAssets.exists(path, IMAGE)) {
 			if(!currentTrackedAssets.exists(path)) {
+				#if android
+				mobile.SessionLog.mark('image ' + path);
+				#end
 				var newGraphic:FlxGraphic = FlxG.bitmap.add(path, false, path);
 				applyTextureScale(newGraphic, path);
+				#if android
+				if (newGraphic != null)
+					mobile.SessionLog.mark('loaded ' + newGraphic.bitmap.width + 'x' + newGraphic.bitmap.height + (newGraphic.width != newGraphic.bitmap.width ? ' scaled from ' + newGraphic.width + 'x' + newGraphic.height : ''));
+				#end
 				newGraphic.persist = true;
 				currentTrackedAssets.set(path, newGraphic);
 			}
@@ -444,6 +451,9 @@ class Paths
 		{
 			var folder:String = '';
 			if(path == 'songs') folder = 'songs:';
+			#if android
+			mobile.SessionLog.mark('sound ' + folder + getPath('$path/$key.$SOUND_EXT', SOUND, library));
+			#end
 
 			currentTrackedSounds.set(gottenPath, OpenFlAssets.getSound(folder + getPath('$path/$key.$SOUND_EXT', SOUND, library)));
 		}

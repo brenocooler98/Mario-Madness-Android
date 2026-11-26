@@ -12,6 +12,9 @@ class VideoSprite extends FlxVideoSprite
 
 	public function new(x:Float = 0, y:Float = 0)
 	{
+		#if android
+		mobile.SessionLog.mark('video player');
+		#end
 		super(null, x, y);
 		bitmap.onVideoFormatSetup.add(onReady);
 		bitmap.onEndReached.add(onFinish);
@@ -22,6 +25,10 @@ class VideoSprite extends FlxVideoSprite
 	{
 		if (!alive)
 			revive();
+
+		#if android
+		mobile.SessionLog.mark('video ' + path);
+		#end
 
 		if (load(path, loop ? [':input-repeat=65535'] : null))
 		{

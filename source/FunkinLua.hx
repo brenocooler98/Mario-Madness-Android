@@ -49,6 +49,7 @@ class FunkinLua
 		#if LUA_ALLOWED
 		#if android
 		mobile.native.LuaSource.init();
+		mobile.SessionLog.mark('lua ' + script);
 		#end
 		lua = LuaL.newstate();
 		LuaL.openlibs(lua);
