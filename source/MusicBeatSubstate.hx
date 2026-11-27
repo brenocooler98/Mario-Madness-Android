@@ -99,15 +99,14 @@ class MusicBeatSubstate extends FlxSubState
 		var size:Int = 115;
 		var margin:Int = 20;
 		var bottom:Float = camera.height - margin;
-		var color:Int = 0xFF8E1C1C;
 		var pad:Array<mobile.TouchButton> = [
-			new mobile.TouchButton(margin + size, bottom - size * 3, size, size, color, UI_UP, ARROW(0)),
-			new mobile.TouchButton(margin, bottom - size * 2, size, size, color, UI_LEFT, ARROW(-90)),
-			new mobile.TouchButton(margin + size * 2, bottom - size * 2, size, size, color, UI_RIGHT, ARROW(90)),
-			new mobile.TouchButton(margin + size, bottom - size, size, size, color, UI_DOWN, ARROW(180))
+			new mobile.VirtualPadButton(margin + size, bottom - size * 3, size, 'up', UI_UP),
+			new mobile.VirtualPadButton(margin, bottom - size * 2, size, 'left', UI_LEFT),
+			new mobile.VirtualPadButton(margin + size * 2, bottom - size * 2, size, 'right', UI_RIGHT),
+			new mobile.VirtualPadButton(margin + size, bottom - size, size, 'down', UI_DOWN)
 		];
 		var backWidth:Float = backButton != null ? backButton.width : 0;
-		pad.push(new mobile.TouchButton(camera.width - backWidth - margin * 2 - size, bottom - size, size, size, 0xFF2E8B3A, ACCEPT, LABEL('A')));
+		pad.push(new mobile.VirtualPadButton(camera.width - backWidth - margin * 2 - size, bottom - size, size, 'a', ACCEPT));
 		for (button in pad)
 		{
 			button.owner = this;
