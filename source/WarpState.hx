@@ -333,6 +333,7 @@ class WarpState extends MusicBeatState
 
 		enableTouchMenu();
 		addBackButton();
+		addVirtualPad();
 
 		if(PlayState.isWarp && !startCut) goToWorld();
 		if(pipeCut) openSubState(new PipeState());
@@ -376,7 +377,7 @@ class WarpState extends MusicBeatState
 
 			if (quieto)
 			{
-				if (controls.ACCEPT || touchConfirm())
+				if (controls.ACCEPT)
 					{
 						goodbye();
 					}
@@ -1732,13 +1733,10 @@ class WorldState extends MusicBeatSubstate
 
 	function fish(){
 		var fishPos:Array<Dynamic> = [[634, 491], [874, 281], [694, 101], [454, 101], [364, 281], [334, 461]];
-		var newPos:Int = FlxG.random.int(0, 6);
-		var fishTimer:Float = FlxG.random.int(6, 10);
-
-		if(bgworld2.x == fishPos[newPos].x){
-			fish();
+		if (bgworld2 == null)
 			return;
-		}
+		var newPos:Int = FlxG.random.int(0, fishPos.length - 1, [for (i in 0...fishPos.length) if (bgworld2.x == fishPos[i][0]) i]);
+		var fishTimer:Float = FlxG.random.int(6, 10);
 
 		thunderTimer = fishTimer;
 		if(bgworld2 != null){
