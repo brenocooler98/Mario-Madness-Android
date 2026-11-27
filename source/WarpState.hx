@@ -761,6 +761,7 @@ class WorldState extends MusicBeatSubstate
 		FlxG.cameras.reset(camWorld);
 		enableTouchMenu();
 		addBackButton();
+		addVirtualPad();
 		CoolUtil.setDefaultCamera(camWorld);
 
 		blackBG = new FlxSprite().makeGraphic(FlxG.width * 2, FlxG.height * 2, FlxColor.BLACK);
@@ -1243,7 +1244,7 @@ class WorldState extends MusicBeatSubstate
 				}
 
 
-			if ((controls.ACCEPT || touchConfirm()) && pipeTimer == 0)
+			if (controls.ACCEPT && pipeTimer == 0)
 				{
 					if(canciones[curSelected][0] == 'Start'){
 						quieto = false;
